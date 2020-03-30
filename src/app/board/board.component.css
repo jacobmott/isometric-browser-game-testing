@@ -1,0 +1,54 @@
+.board{
+  position: static;
+  width: 1920px;
+  height: 1080px;
+  top:0;
+  left:0;
+  background-color: #008000;
+}
+
+.debug{
+  display: none;
+}
+
+
+.playerHealth{
+  z-index: 1;
+  position: fixed;
+  width: 200px;
+  height: 200px;
+  top:0px;
+  right:10px;
+}
+
+.playerInventory{
+  z-index: 1;
+  position: fixed;
+  width: 200px;
+  height: 200px;
+  top:200px;
+  right:10px;
+}
+
+/* .box-orange {          without any position declaration */
+/*   background: orange; */
+/*   height: 100px; */
+/*   width: 100px;      */  
+/* }  */
+
+
+.box-orange {
+  position: relative;  /* We are now ready to move the element */
+  background: orange;
+  width: 100px;
+  height: 100px;
+  top: 100px;         /* 100px from top relative to its old position */
+  left: 100px;       /* 100px from left */
+}
+
+.box-blue {
+  background: lightskyblue;
+  height: 100px;
+  width: 100px; 
+  position: static;  
+}
