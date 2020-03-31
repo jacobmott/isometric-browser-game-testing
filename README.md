@@ -48,6 +48,31 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
     * https://graphicriver.net/item/the-green-isometric-tileset/20796124
     * https://www.gamedevmarket.net/user/login/
     * https://stackoverflow.com/questions/10214873/make-canvas-as-wide-and-as-high-as-parent
+    * This seems to be the only formula that works
+    * https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
+
+
+## Notes
+  * This seems to be the only formula that works
+    * https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
+  Also, what people done mention is that you need to get tiles that have been designed to be the ratio you are coding for.
+  So if you are doing a 2 to 1 (twice the width as height, 2:1) ratio tile, then you need to get isometric assets that are 2 to 1
+  For example.. 2400x1200.. Then when you are drawing and running the algorithm that projects from cartesian coordinations(x,y) to
+  isometric coordinates, you need to specify your tileWidth and tileHeight as your ratio.. and also, as the actual size you want your tiles to be
+  (So if you have a 2400x1200 image, and your tile width and height are 2:1... 100x50, then your 2400x1200 image will be "tiled" down to your 100x50 (2 to 1) image size
+  when its projeted, since your projected formula uses the tile width and tile height to "project" the tile into an isometric projection.
+
+  Copying the formula here in case the website goes away:
+  This is where basic math came to the rescue. The algorithm I use for drawing tiles is:
+
+   FOR Y := 1 TO SizeY DO BEGIN
+      FOR X := 1 TO SizeX DO BEGIN
+         DrawX := ((X - Y) * 38) + 400;
+         DrawY := (X + Y) * 19;
+      END;
+   END;
+
+
 
 
 ## TODO

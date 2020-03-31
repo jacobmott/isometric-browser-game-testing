@@ -1,0 +1,375 @@
+/* -------------------------------- Global styles -------------------------------- */
+
+* {
+	margin: 0; padding: 0;
+}
+
+html, body {
+	width: 100%; height: 100%;
+}
+
+body, table, tr, td, th, input, textarea {
+	font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 14px; color: #666;
+	line-height: 18px;
+}
+
+hr {
+	height: 0; line-height: 0; font-size: 0;
+	border-top: 1px solid #CCC;
+	display: block; clear: both;
+	padding: 0; margin: 10px 0;
+}
+
+img { 
+	vertical-align: bottom; border:0;
+}
+
+p { 
+	display: block; clear: both;
+	margin-bottom: 20px;
+}
+
+.left,
+.alignleft {
+	float: left;
+}
+
+.right,
+.alignright {
+	float: right;
+}
+
+.aligncenter {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.clear {
+	clear: both;
+}
+
+.center {
+	text-align: center; 
+}
+
+blockquote {
+	font-size: 16px; color: #666;
+	border-left: 1px solid #CCC;
+	padding-left: 20px;
+}
+
+
+
+
+/* -------------------------------- Main layout styles -------------------------------- */
+
+body {
+	text-align: center; 
+	background: #FFF url("images/bg-main.jpg") no-repeat center top;
+}
+
+
+div#page {
+	width: 900px; height: 100%;
+	margin: 0 auto;
+	margin-top: 10px;
+	text-align: justify;
+}
+
+div#header {
+	width: 180px;
+	display: table; clear: both;
+	padding: 20px 0;
+}
+
+ul#menu {
+	width: 720px;
+	text-transform: uppercase;
+	border-top: 1px solid #CCC;
+	border-bottom: 1px solid #CCC;
+	display: table; clear: both;
+	padding: 5px 0;
+	list-style: none;
+}
+
+div#content {
+	width: 900px;
+	text-align: left;
+	clear: both;
+	padding-top: 40px; margin: 0 auto;
+}
+
+div#maincontent {
+	width: 600px;
+	float: left;
+}
+
+div#sidebar {
+	width: 260px;
+	float: right;
+}
+
+div#footer {
+	width: 900px;
+	border-top: 1px solid #CCC;
+	display: block; clear: both;
+	padding-top: 40px; margin: 40px auto;
+}
+
+/* -------------------------------- Additional layout styles -------------------------------- */
+
+
+.countdown {
+	font-size: 20px;
+}
+
+.size-medium, .size-thumbnail {
+	display: block; float: left;
+	margin: 0 20px 20px 0;
+}
+
+.size-large, .size-full {
+	display: block; clear: both;
+	margin-bottom: 20px;
+}
+
+.date {
+	font-size: 12px; font-weight: normal; color: #999;
+	display: block; clear: both;
+	margin-bottom: 10px;
+}
+
+.blog-comments { float:right; }
+.post,
+.comment {
+	width: 600px;
+	overflow: hidden;
+	border-bottom: 1px solid #CCC;
+	display: table; clear: both;
+	margin-bottom: 20px;
+}
+
+.post {
+   text-align: justify;
+}
+
+.singlepost {
+	width: 600px;
+	overflow: hidden;
+	display: table; clear: both;
+   text-align: justify;
+}
+
+.postmeta,
+.commentmeta {
+	display: block; clear: both;
+	margin-bottom: 20px;	
+}
+
+#pagination,
+#navigation {
+	display: block; clear: both;
+}
+
+#pagination {
+	width: 600px;
+	overflow: hidden;
+	border-top: 1px solid #CCC;
+	display: table; clear: both;
+	padding: 20px 0;
+}
+
+.commentavatar {
+	margin-right: 20px;
+}
+
+.commenttext {
+	float: left;
+}
+
+.alt {
+	/*background: #EFEFEF;*/
+}
+
+.widget {
+	display: block; clear: both;
+
+}
+
+/* -------------------------------- Heading styles -------------------------------- */
+
+h1 {
+	display: block; float: left;
+}
+
+h2 {
+	font-size: 14px; font-weight: normal; color: #999; line-height: 14px;
+	text-transform: uppercase;
+	border-bottom: 1px solid #CCC;
+	display: block; clear: both;
+	margin-bottom: 20px;
+}
+
+h3 {
+	font-size: 14px; font-weight: normal; color: #999;
+}
+
+#maincontent h3 {
+	font-size: 18px; font-weight: bold; color: #999;
+}
+
+h4 {	
+	font-size: 14px; font-weight: normal; color: #999;
+}
+
+/* -------------------------------- Link styles -------------------------------- */
+
+a,
+a:focus, 
+a:link, 
+a:active { 
+	outline: none; font-weight: bold;
+}
+
+a {
+	color: #181818; text-decoration: none; font-weight: bold;
+}
+
+a:visited {
+	color: #999; text-decoration: none; font-weight: bold;
+}
+
+a:hover {
+	color: #999; text-decoration: underline; font-weight: bold;
+}
+
+ul#menu li a {
+	color: #999;
+	text-decoration: none;
+}
+
+ul#menu li.current_page_item a,
+ul#menu li a:hover {
+	color: #000;
+	text-decoration: none;
+}
+
+.rss {
+	background: url('images/rss-icon.png') left 50% no-repeat;
+	padding-left: 26px;
+}
+
+/* -------------------------------- List styles -------------------------------- */
+
+ul,
+ol,
+li {
+}
+
+ul#menu li {
+	display: block; float: left;
+	margin-right: 30px;
+}
+
+ul#menu li.right {
+	float: right;
+	margin: 0;
+}
+
+#maincontent ul {
+	list-style: disc inside;
+	display: block; clear: both;
+	margin-bottom: 20px;
+}
+
+#sidebar ul {
+	list-style: none;
+	display: block; clear: both;
+	margin-bottom: 20px;
+}
+
+/* -------------------------------- Form styles -------------------------------- */
+
+input {
+	width: 50%;
+	color: #999;
+	background: #FFF;
+	border: 1px solid #CCC;
+}
+
+#sidebar input {
+	width: 100%;
+	margin-bottom: 20px;
+}
+
+textarea {
+	width: 100%;
+	color: #999;
+	background: #FFF;
+	border: 1px solid #CCC;
+	overflow: auto;
+}
+
+.nav-previous {
+	float: left;
+}
+
+.nav-next {
+	float: right;
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Captions */
+.aligncenter,
+div.aligncenter {
+display: block;
+margin-left: auto;
+margin-right: auto;
+}
+
+.wp-caption {
+border: 1px solid #ddd;
+text-align: center;
+background-color: #f3f3f3;
+padding-top: 4px;
+margin: 10px;
+margin-bottom: 5px;
+}
+
+.wp-caption img {
+margin: 0;
+padding: 0;
+border: 0 none;
+}
+
+.wp-caption p.wp-caption-text {
+font-size: 11px;
+line-height: 17px;
+padding: 0 4px 5px;
+margin: 0;
+}
+/* End captions */
+
+.post{
+padding: 10px 0 10px 0;
+}
+
+.wp-caption-text {
+font-size:xx-small;
+color: #666
+vertical-align:top;
+}
+
+.wp-caption.aligncenter {display: block; margin-left: auto; margin-right: auto; margin-bottom: 5px;}
+.wp-caption.alignright {float:right; margin:0 0 1em 1em; margin-bottom: 5px;}
+.wp-caption.alignleft {float:left; margin:0 1em 1em 0; margin-bottom: 5px;}

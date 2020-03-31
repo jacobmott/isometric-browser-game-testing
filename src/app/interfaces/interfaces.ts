@@ -28,7 +28,7 @@ export interface ImgStyle {
 
 export interface RenderData{
   imgElement: HTMLImageElement,
-  isoCoords: Point2d
+  tilePosition: Point2d
 }
 
 //export interface Player {

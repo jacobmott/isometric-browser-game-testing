@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { Tile } from '../classes/tile';
 import { Point2d, DivStyle, ImgStyle, RenderData } from '../interfaces/interfaces';
-
+import {HostListener} from '@angular/core';
 
 @Component({
   selector: 'app-board',
@@ -12,26 +12,51 @@ export class BoardComponent implements OnInit {
   @ViewChild('canvas', { static: true })
   canvas: ElementRef<HTMLCanvasElement>;  
   private ctx: CanvasRenderingContext2D;
+  mouseCurrentPosEvent;
 
+  //@HostListener('mousemove', ['$event'])
+  //handleMousemove(event) {
+  //  this.mouseCurrentPosEvent = event;
+  //  this.whatTileWasClicked();
+  //}
 
+  @HostListener('document:mousedown', ['$event'])
+  onMouseDown(event) {
+    //console.log(event);
+    this.mouseCurrentPosEvent = event;
+    let point: Point2d = this.whatTileWasClicked();
+    this.levelData[point.x][point.y] = 3;
+    this.tilesZIndex1 = [];
+    this.tilesZIndex2 = [];
+    this.createBoard();
+  }
 
   tilesZIndex1: RenderData [] = [];
   tilesZIndex2: RenderData [] = [];;
   tiles: Map<number, Tile> = new Map<number, Tile>();
   rows: number =  8;
-  columns: number =  8;
-  tileWidth: number = 20;
-  tileHeight: number = 44;
+  columns: number = 11;
+  //we did have 200 to 100 before .. which is 2 to 1.. but thats not a true isometric projection
+  //Technically, isometric tiles cannot have a width/height ratio of 2:1. 
+  //The ratio actually has to be 1.732:1 for the angular properties to be preserved. What we call an "isometric" projection is actually a dimetric projection
+  //Anyway, FWIW, 2:1 is much easier math-wise. I'm not sure using real isometric angles would be worth the extra effort.
+  //I was just reading Wikipedia and saw the same thing about dimetric projection actually being used instead of isometric projection, but I guess everybody still calls it isometric projection anyways.
+  tileWidth: number = 200;
+  tileHeight: number = 100;
   levelData: number [][] = [
     [1,1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,0],
-    [1,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,2,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,2,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,2,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1],
     [1,1,1,1,1,1,1,1,1,1,1]
   ];
+  //levelData: number [][] = [
+  //  [1,1],
+  //  [1,1]
+  //];
   tileTypes: Map<number, Tile> = new Map<number, Tile>();
   imagesLoaded: number = 0;
   isoOffsetX: number = 400;
@@ -44,13 +69,14 @@ export class BoardComponent implements OnInit {
     this.ctx = this.canvas.nativeElement.getContext('2d');
     this.canvas.nativeElement.width  = this.canvas.nativeElement.offsetWidth;
     this.canvas.nativeElement.height = this.canvas.nativeElement.offsetHeight;
+    this.isoOffsetX = window.innerWidth/2;
     this.initializeTypeTypes();
   }
 
   initializeTypeTypes(){
     //ground
     let groundTile: Tile = new Tile();
-    groundTile.setImage("assets/ground2.png");
+    groundTile.setImage("assets/ground4.png");
     var img = new Image();   // Create new img element
     img.src = groundTile.getImage(); // Set source path
     groundTile.setZindex(1);
@@ -60,12 +86,12 @@ export class BoardComponent implements OnInit {
       boardComponent.createBoard();   
     }
     groundTile.setImageElement(img);
-    this.tileTypes.set(0, groundTile);
+    this.tileTypes.set(1, groundTile);
 
     //wall(Horizontal/Row?)
     let cornerWallHorizontalTile: Tile = new Tile();
-    cornerWallHorizontalTile.setImage("assets/ground2.png");
-    cornerWallHorizontalTile.setZindex(1);
+    cornerWallHorizontalTile.setImage("assets/towerskeles.png");
+    cornerWallHorizontalTile.setZindex(2);
     var img2 = new Image();   // Create new img element
     img2.src = cornerWallHorizontalTile.getImage(); // Set source path
     img2.onload = function(){
@@ -73,21 +99,39 @@ export class BoardComponent implements OnInit {
       boardComponent.createBoard();   
     }
     cornerWallHorizontalTile.setImageElement(img2);
-    this.tileTypes.set(1, cornerWallHorizontalTile);
+    this.tileTypes.set(2, cornerWallHorizontalTile);
+
+
+    //wall(Horizontal/Row?)
+    let Tile3: Tile = new Tile();
+    Tile3.setImage("assets/towerskeles2.png");
+    Tile3.setZindex(2);
+    var img3 = new Image();   // Create new img element
+    img3.src = Tile3.getImage(); // Set source path
+    img3.onload = function(){
+      boardComponent.imagesLoaded = boardComponent.imagesLoaded+1;
+      boardComponent.createBoard();   
+    }
+    Tile3.setImageElement(img3);
+    this.tileTypes.set(3, Tile3);
   
   }
 
   createBoard(){
 
-
-    if (!(this.imagesLoaded === 2)){ return; }
+    if (!(this.imagesLoaded === 3)){ return; }
+    this.ctx.clearRect (0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
     let index: number = 0;
-    for (let row: number = 0; row < this.rows; row++){
-      for (let column: number = 0; column < this.columns; column++){
-        let x = column * this.tileWidth;
-        let y = row * this.tileHeight;
+    for (let column: number = 0; column < this.columns; column++){
+      for (let row: number = 0; row < this.rows; row++){
+        let tilePositionX = ((row - column) * (this.tileWidth/2)) + (this.canvas.nativeElement.width / 2);
+        let tilePositionY = (row + column) * (this.tileHeight/2);
+        //let tilePositionX = (row-column) * this.tileWidth;
+        //tilePositionX += (this.canvas.nativeElement.width / 2) - (this.tileWidth / 2);
+        //let tilePositionY = (row + column) * (this.tileHeight / 2);
         let tileType = this.levelData[row][column];
-        this.addTile(tileType, x, y, index);
+        this.addTile(tileType, Math.round(tilePositionX), Math.round(tilePositionY), index);
+        console.log("Col"+column+ ": Row"+row+": tilePositionX: "+tilePositionX+": tilePositionY: "+tilePositionY);
         ++index;
       }
     }
@@ -96,12 +140,29 @@ export class BoardComponent implements OnInit {
 
   }
 
+
+  whatTileWasClicked():  Point2d{
+
+   let screenX = this.mouseCurrentPosEvent.clientX;
+   let screenY = this.mouseCurrentPosEvent.clientY;
+
+    screenX = screenX - ((this.canvas.nativeElement.width / 2)+(this.tileWidth/2));
+    let tileX = Math.trunc((screenY / (this.tileHeight)) + (screenX / this.tileWidth));
+    let tileY = Math.trunc((screenY / (this.tileHeight)) - (screenX / this.tileWidth));
+    console.log("Tile X: "+tileX+" : "+"Y: "+tileY+" : Was clicked!");
+    let point: Point2d = {
+      x: tileX,
+      y: tileY
+    };
+    return point;
+  }
+
   drawtiles(){
     this.tilesZIndex1.forEach((renderData: RenderData, key: number) => {
-      this.ctx.drawImage(renderData.imgElement, renderData.isoCoords.x, renderData.isoCoords.y);
+      this.ctx.drawImage(renderData.imgElement, renderData.tilePosition.x, renderData.tilePosition.y, this.tileWidth, this.tileHeight);
     });
     this.tilesZIndex2.forEach((renderData: RenderData, key: number) => {
-      this.ctx.drawImage(renderData.imgElement, renderData.isoCoords.x, renderData.isoCoords.y);
+      this.ctx.drawImage(renderData.imgElement, renderData.tilePosition.x, renderData.tilePosition.y, this.tileWidth, this.tileHeight);
     });
   }
 
@@ -109,14 +170,14 @@ export class BoardComponent implements OnInit {
     let tile: Tile = this.tileTypes.get(tileType);
     let clonedTile: Tile = tile.deepClone();
     clonedTile.setId(index);
-    let cartPoint2d: Point2d = {
+    let tilePosition: Point2d = {
       x: x,
       y: y
     };
-    let isoCord: Point2d = this.cartesianToIsometric(cartPoint2d);
+    //let isoCord: Point2d = this.cartesianToIsometric(cartPoint2d);
     let renderData: RenderData = {
       imgElement: clonedTile.getImageElement(),
-      isoCoords: isoCord
+      tilePosition: tilePosition
     };
     if (tile.getZindex() === 1){
       this.tilesZIndex1.push(renderData);

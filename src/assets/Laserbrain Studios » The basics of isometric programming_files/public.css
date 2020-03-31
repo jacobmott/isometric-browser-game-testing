@@ -1,0 +1,55 @@
+input.parsley-success,
+select.parsley-success,
+textarea.parsley-success {
+  color: #468847;
+  background-color: #dff0d8;
+  border: 1px solid #d6e9c6;
+}
+input.parsley-error,
+select.parsley-error,
+textarea.parsley-error {
+  color: #b94a48;
+  background-color: #f2dede;
+  border: 1px solid #eed3d7;
+}
+.parsley-errors-list {
+  margin: 2px 0 3px;
+  padding: 0;
+  list-style-type: none;
+  font-size: 0.9em;
+  line-height: 0.9em;
+  color: #b94a48;
+  opacity: 0;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+  filter: alpha(opacity=0);
+  -webkit-transition: all 0.3s ease-in;
+  -moz-transition: all 0.3s ease-in;
+  -o-transition: all 0.3s ease-in;
+  -ms-transition: all 0.3s ease-in;
+  transition: all 0.3s ease-in;
+  -o-transition: all 0.3s ease-in;
+  -moz-transition: all 0.3s ease-in;
+  -webkit-transition: all 0.3s ease-in;
+}
+.parsley-errors-list.filled {
+  opacity: 1;
+  -ms-filter: none;
+  filter: none;
+}
+.parsley-errors-list {
+  margin-top: 8px;
+}
+.parsley-required,
+.parsley-custom-error-message {
+  color: #b94a48;
+}
+/* labels */
+.mailpoet_text_label,
+.mailpoet_textarea_label,
+.mailpoet_select_label,
+.mailpoet_radio_label,
+.mailpoet_checkbox_label,
+.mailpoet_list_label,
+.mailpoet_date_label {
+  display: block;
+}
