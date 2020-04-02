@@ -31,6 +31,14 @@ export interface RenderData{
   tilePosition: Point2d
 }
 
+export interface Player {
+  point2d: Point2d;
+  speed: number;
+  name: string;
+  id: number;
+  dead: boolean;
+}
+
 //export interface Player {
 //  rect: Rect;
 //  speed: number;

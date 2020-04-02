@@ -52,6 +52,22 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
     * https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
 
 
+*  Making Isometric Social Real-Time Games with HTML5, CSS3, and JavaScript (Code/github)
+*  This is a reference to the files from the book, the image files and the spritesheet parsing and timing code
+     * https://github.com/andrespagella/Making-Isometric-Real-time-Games/blob/master/examples/timer.js
+
+* Imagemagickmage software.. this installs convert command .. and you need to install it via cygwin, just look for image magic in the cygwin install packages
+    * http://www.imagemagick.org
+    * https://imagemagick.org/script/download.php
+    * Then you can do this:
+    * http://www.imagemagick.org/script/command-line-options.php#append
+    * https://www.imagemagick.org/discourse-server/viewtopic.php?t=15523
+* Sample convert command
+    * convert crusader_walk_70014.png crusader_walk_70013.png  +append combined.png
+
+
+
+
 ## Notes
   * This seems to be the only formula that works
     * https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
