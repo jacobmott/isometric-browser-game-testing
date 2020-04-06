@@ -92,6 +92,16 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
    END;
 
 
+TO use this, just do 
+-npm install
+then
+-ng serve (Then navigate to http://localhost:4200/)
+
+you may need to install
+npm install nan
+and also need to make sure to at least use version 10.13 of node.. you can do nvm to get that version
+-nvm install 10.13
+
 
 
 ## TODO
