@@ -48,3 +48,22 @@ export interface Player {
 //  state: State;
 //  img: string
 //}
+
+
+export enum SpriteTypes {
+  GROUND = 1,
+  BUILDING = 2,
+  PLAYER = 3,
+  ENEMY = 4
+}
+
+
+export interface GlobalConfig{
+  zoomLevel: number;
+  canvasWidth: number;
+  tileWidth: number;
+  tileHeight: number;
+  hasChanged: boolean;
+  offsetX: number;
+  offsetY: number;
+}

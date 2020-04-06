@@ -4,6 +4,8 @@ import { Entity} from '../classes/entity';
 import { Timer } from '../classes/timer';
 import { Point2d, SpriteTypes, GlobalConfig } from '../interfaces/interfaces';
 import { HostListener } from '@angular/core';
+import * as mathjs from 'mathjs';
+import * as glMatrix from 'gl-matrix'
 
 @Component({
   selector: 'app-board',
@@ -30,9 +32,7 @@ export class BoardComponent implements OnInit {
     canvasWidth: 1920,
     tileWidth: 100,
     tileHeight: 100,
-    hasChanged: false,
-    offsetX: 0,
-    offsetY: 0
+    hasChanged: false
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -62,11 +62,40 @@ export class BoardComponent implements OnInit {
     [25,20,20,20,20,20,20,20,20,20,24]
   ];
 
+  //https://gamedev.stackexchange.com/questions/159434/how-to-convert-3d-coordinates-to-2d-isometric-coordinates
+  Xx: number = 1;
+  Xy: number = -1/2;
+  Xz: number = -1/(2*Math.sqrt(2));
+  x;
+  xVector = [this.Xx, this.Xy, this.Xz];
 
+
+  Yx: number = -1;
+  Yy: number = -1/2;
+  Yz: number = -1/(2*Math.sqrt(2));
+  y;
+  yVector = [this.Yx, this.Yy, this.Yz]
+
+  Zx: number = 0;
+  Zy: number = 1;
+  Zz: number = -1/(2*Math.sqrt(2));
+  z;
+  zVector = [this.Zx, this.Zy, this.Zz];
+
+  Tx: number = 0;
+  Ty: number = 0;
+  Tz: number = 0;
+  t;
+  tVector = [this.Tx, this.Ty, this.Tz];  
+
+  isoProjectionMatrix: mathjs.Matrix; // Matrix
+
+
+  mat4IsoProjection = glMatrix.mat4.create();
 
   spriteTypesLookupMap: Map<number, Sprite> = new Map<number, Sprite>();
   imagesLoaded: number = 0;
-  currentPlayerSpriteId: number = 0;
+  currentPlayerSpriteId: number = 1;
   currentPlayerSprite: Sprite = null;
 
   playerWalking: boolean = false;
@@ -97,15 +126,12 @@ export class BoardComponent implements OnInit {
       this.globalConfig.zoomLevel += 0.5;
       this.globalConfig.tileWidth = this.globalConfig.tileWidth * 0.5;
       this.globalConfig.tileHeight = this.globalConfig.tileHeight * 0.5;
-      this.globalConfig.offsetY += 400;
       this.globalConfig.hasChanged = true;
     }
     if(event.deltaY<0){
       this.globalConfig.zoomLevel -= 0.5;
       this.globalConfig.tileWidth = this.globalConfig.tileWidth / 0.5;
       this.globalConfig.tileHeight = this.globalConfig.tileHeight / 0.5;
-      //this.globalConfig.offsetY = this.centerIso;
-      this.globalConfig.offsetY -= 400;
       this.globalConfig.hasChanged = true;
     }
   }
@@ -153,6 +179,26 @@ export class BoardComponent implements OnInit {
     this.ctx = this.canvas.nativeElement.getContext('2d');
     this.canvas.nativeElement.width  = this.canvas.nativeElement.offsetWidth;
     this.canvas.nativeElement.height = this.canvas.nativeElement.offsetHeight;
+    //http://glmatrix.net/docs/module-mat4.html
+    this.Xx = this.Xx * this.tileWidth; 
+    this.Xy = this.Xy * this.tileWidth; 
+    this.Xz = this.Xz * this.tileWidth; 
+    this.Yx = this.Yx * this.tileWidth; 
+    this.Yy = this.Yy * this.tileWidth; 
+    this.Yz = this.Yz * this.tileWidth;    
+    this.Zx = this.Zx * this.tileWidth; 
+    this.Zy = this.Zy * this.tileWidth; 
+    this.Zz = this.Zz * this.tileWidth;   
+    //this.mat4IsoProjection = glMatrix.mat4.create(this.Xx, this.Xy, this.Xz, this.Xx, this.Yx, this.Yy, this.Yz, this.Yx, this.Zx, this.Zy, this.Zz, this.Zx, this.Tx, this.Ty, this.Tz, this.Tx);
+    this.mat4IsoProjection = glMatrix.mat4.fromValues(this.Xx, this.Xy, this.Xz, this.Xx, this.Yx, this.Yy, this.Yz, this.Yx, this.Zx, this.Zy, this.Zz, this.Zx, this.Tx, this.Ty, this.Tz, this.Tx);
+    //https://mathjs.org/docs/reference/functions/dotMultiply.html
+    //let xMultipliedByScalar: mathjs.MathType = mathjs.dotMultiply(this.xVector, this.tileWidth);
+    //let yMultipliedByScalar: mathjs.MathType = mathjs.dotMultiply(this.yVector, this.tileWidth);
+    //let zMultipliedByScalar: mathjs.MathType = mathjs.dotMultiply(this.zVector, this.tileWidth);      
+    //this.x = xMultipliedByScalar.valueOf();
+    //this.y = yMultipliedByScalar.valueOf();
+    //this.z = zMultipliedByScalar.valueOf();   
+    //this.isoProjectionMatrix =  mathjs.matrix([this.x, this.y, this.z]);
 
     this.isoOffsetX = this.canvas.nativeElement.width/2;
 
@@ -160,12 +206,10 @@ export class BoardComponent implements OnInit {
     this.canvasHeight = this.canvas.nativeElement.height;
 
     this.globalConfig.canvasWidth = this.canvasWidth;
-    
-    this.globalConfig.offsetX = this.canvasWidth/2;
 
     this.player.setPoint2d({ x: 200, y: 500});
     this.player.setZindex(2);
-    this.player.setSpeed(2);
+    this.player.setSpeed(200);
     this.player.setDead(false);
 
     //Create our lookupmap so when we are looking through our level data we can lookup the sprite we need per tile
@@ -191,12 +235,12 @@ export class BoardComponent implements OnInit {
     this.gameLoopF = setInterval(() => {
       this.playerWalking = false;
       if(this.keyDown["d"]) {
-        this.player.point2d.x -= this.player.speed/this.fps;
+        this.player.point2d.x += this.player.speed/this.fps;
         this.playerWalking = true;
         this.currentPlayerSpriteId = 2;
       }
       if(this.keyDown["a"]) {
-        this.player.point2d.x += this.player.speed/this.fps;
+        this.player.point2d.x -= this.player.speed/this.fps;
         this.playerWalking = true;
         this.currentPlayerSpriteId = 1;
       }
@@ -210,15 +254,14 @@ export class BoardComponent implements OnInit {
         this.playerWalking = true;
         this.currentPlayerSpriteId = 0;
       }
-
-      if(this.keyDown["s"]) {
-        this.player.point2d.y +=  this.player.speed/this.fps;
-        this.playerWalking = true;
-        this.currentPlayerSpriteId = 0;
-      }
  
+      let tileGridLocationRow = this.currentPlayerSprite.tileGridLocationRow;
+      let tileGridLocationColumn = this.currentPlayerSprite.tileGridLocationColumn;
       this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
-      this.currentPlayerSprite.setCartisianPosition(this.player.point2d.x, this.player.point2d.y);
+      this.currentPlayerSprite.setPosition(this.player.point2d.x, this.player.point2d.y);
+      let playerPoint = this.playersCurrentTileLocation();
+      this.currentPlayerSprite.setTileGridLocation(playerPoint.y, playerPoint.x);
+      //this.currentPlayerSprite.setPosition(this.player.point2d.x, this.player.point2d.y);
 
       this.ctx.clearRect (0, 0, this.canvasWidth, this.canvasHeight);
       this.drawAndAnimateSprites();
@@ -253,9 +296,13 @@ export class BoardComponent implements OnInit {
     let index: number = 0;
     for (let column: number = 0; column < this.columns; column++){
       for (let row: number = 0; row < this.rows; row++){
-        let tilePositionX = ((row - column) * (this.tileWidth/2)) + (this.globalConfig.offsetX);
+        let tilePositionX = ((row - column) * (this.tileWidth/2)) + (this.canvasWidth/2);
         let tilePositionY = (row + column) * (this.tileHeight/2);
-        let spriteType = this.levelData[row][column];        
+        let spriteType = this.levelData[row][column];
+        let outVec = glMatrix.vec4.create();
+        let intVec = glMatrix.vec4.fromValues(tilePositionX, tilePositionY, 0, 0);
+        glMatrix.vec4.transformMat4(outVec, intVec, this.mat4IsoProjection);
+        
         this.addSpriteForRenderingAndAnimating(spriteType, Math.round(tilePositionX), Math.round(tilePositionY), row, column);
         ++index;
       }
@@ -274,9 +321,9 @@ addSpriteForRenderingAndAnimating(spriteType: number, x: number, y: number, row:
   //Clone the tile so we have a copy, all objects are passed by reference in typescript
   let sprite: Sprite = this.spriteTypesLookupMap.get(spriteType);
   let clonedSprite: Sprite = sprite.deepClone();
-  clonedSprite.setCartisianPosition(column, row);
-  clonedSprite.setScreenPosition(x, y);  
+  clonedSprite.setPosition(x, y);
   clonedSprite.setMapLookupId(this.spriteMapLookupIdSequence);
+  clonedSprite.setTileGridLocation(row, column);
 
   if (clonedSprite.getZindex() === 0){
     if (clonedSprite.getSpriteType() === SpriteTypes.GROUND){
@@ -293,15 +340,9 @@ addSpriteForRenderingAndAnimating(spriteType: number, x: number, y: number, row:
   if (clonedSprite.getZindex() === 2){
     if (clonedSprite.getSpriteType() === SpriteTypes.PLAYER){
       clonedSprite.setMapLookupId(sprite.getMapLookupId());
-      if (clonedSprite.getMapLookupId() > 0){
-        let startingPlayerSprite: Sprite = this.playerTileSpritesZIndex2.get(0);
-        clonedSprite.setCartisianPosition(startingPlayerSprite.getCartisianPosition().x, startingPlayerSprite.getCartisianPosition().y);
-      }
-      else{
-        this.player.point2d.x = column;
-        this.player.point2d.y = row;
-      }
       this.playerTileSpritesZIndex2.set(clonedSprite.getMapLookupId(), clonedSprite);
+      this.currentPlayerSpriteId = clonedSprite.getMapLookupId();
+      this.currentPlayerSprite = clonedSprite;
     }
     else if (clonedSprite.getSpriteType() === SpriteTypes.ENEMY){
       this.entityTileSpritesZIndex2.set(clonedSprite.getMapLookupId(), clonedSprite);
@@ -323,12 +364,7 @@ addSpriteForRenderingAndAnimating(spriteType: number, x: number, y: number, row:
     this.buildingTileSpritesZIndex1.forEach((sprite: Sprite, key: number) => {
       sprite.draw(this.ctx);
     });
-    if (this.playerWalking){
-      this.currentPlayerSprite.animate(this.ctx, this.timer);
-    }
-    else{
-      this.currentPlayerSprite.draw(this.ctx);
-    }
+    this.currentPlayerSprite.animate(this.ctx, this.timer);
     //this.playerTileSpritesZIndex2.forEach((sprite: Sprite, key: number) => {
     //  sprite.draw(this.ctx);
     //});
@@ -623,11 +659,40 @@ drawDebugInfo() {
 
   this.ctx.font = '14px _sans';
   this.ctx.fillText ("playersCurrentTileLocation: "+"Column: "+this.playersCurrentTileLocation().x+" : "+"Row: "+this.playersCurrentTileLocation().y, 10, 300);
-  this.ctx.fillText ("playerLeftDKeyCurrentPosition: "+playerLeftDKey.getCartisianPosition().x+" : "+playerLeftDKey.getCartisianPosition().y, 10, 320);
-  this.ctx.fillText ("playerRightAKeyCurrentPosition: "+playerRightAKey.getCartisianPosition().x+" : "+playerRightAKey.getCartisianPosition().y, 10, 340);  
-  this.ctx.fillText ("playerUpWKeyCurrentPosition: "+playerUpWKey.getCartisianPosition().x+" : "+playerUpWKey.getCartisianPosition().y, 10, 360);  
-  this.ctx.fillText ("playerDownSKeyCurrentPosition: "+playerDownSKey.getCartisianPosition().x+" : "+playerDownSKey.getCartisianPosition().y, 10, 380);  
-  //this.ctx.fillText ("playerLeftDKeyTileLocation: "+playerLeftDKey.screenPosX+" : "+playerLeftDKey.screenPosY, 10, 400);  
+  this.ctx.fillText ("playerLeftDKeyCurrentPosition: "+playerLeftDKey.getPosition().x+" : "+playerLeftDKey.getPosition().y, 10, 320);
+  this.ctx.fillText ("playerRightAKeyCurrentPosition: "+playerRightAKey.getPosition().x+" : "+playerRightAKey.getPosition().y, 10, 340);  
+  this.ctx.fillText ("playerUpWKeyCurrentPosition: "+playerUpWKey.getPosition().x+" : "+playerUpWKey.getPosition().y, 10, 360);  
+  this.ctx.fillText ("playerDownSKeyCurrentPosition: "+playerDownSKey.getPosition().x+" : "+playerDownSKey.getPosition().y, 10, 380);  
+  this.ctx.fillText ("playerLeftDKeyTileLocation: "+playerLeftDKey.tileGridLocationColumn+" : "+playerLeftDKey.tileGridLocationRow, 10, 400);  
+  
+  
+  //this.ctx.fillText ("xBefore vector: "+this.xVector, 10, 420);
+  //this.ctx.fillText ("yBefore vector: "+this.yVector, 10, 440);
+  //this.ctx.fillText ("zBefore vector: "+this.zVector, 10, 460);   
+  //this.ctx.fillText ("xAfter vector: "+this.x, 10, 480);
+  //this.ctx.fillText ("yAfter vector: "+this.y, 10, 500);
+  //this.ctx.fillText ("zAfter vector: "+this.z, 10, 520);
+  //this.ctx.fillText ("isoProjectionMatrix: "+this.isoProjectionMatrix, 10, 100);
+
+  //let playersPositionMultipledByIsoProjectionMatrix = mathjs.multiply(this.isoProjectionMatrix, [this.player.point2d.x, this.player.point2d.y, 1]);
+  //let what = playersPositionMultipledByIsoProjectionMatrix.valueOf();
+
+  //this.ctx.fillText ("playersPositionMultipledByIsoProjectionMatrix: "+what, 10, 120);
+
+  //let playerVec = glMatrix.vec4.fromValues(this.player.point2d.x, this.player.point2d.y, 1, 1);
+
+  //var playerVec = glMatrix.vec4.fromValues(33.0, 44.0, 1.0, 1.0);
+  let vec3 = glMatrix.vec3.fromValues(3.0, 4.0, 5.0);
+  const coords = glMatrix.vec4.fromValues(this.player.point2d.x, this.player.point2d.y, 1.0,0.0);
+  let outVec = glMatrix.vec4.create();
+  const matrix = glMatrix.mat4.create();
+  glMatrix.vec4.transformMat4(outVec, coords, this.mat4IsoProjection);
+  //let value =  playerVec * this.mat4IsoProjection;
+  //glMatrix.mat4.multiplyVec3(this.mat4IsoProjection, playerVec, isoProjectedPlayerVec); // Result is written into newPos
+  this.ctx.fillText ("mat4IsoProjection: "+this.mat4IsoProjection, 10, 100);
+  this.ctx.fillText ("outVec: "+outVec, 10, 120);  
+  //this.ctx.fillText ("isoProjectedPlayerVec: "+value, 10, 140);  
+  
       
   
 }

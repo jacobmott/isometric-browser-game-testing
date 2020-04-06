@@ -65,6 +65,9 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 * Sample convert command
     * convert crusader_walk_70014.png crusader_walk_70013.png  +append combined.png
 
+* Isometric Tiles Math
+    * http://clintbellanger.net/articles/isometric_math/    
+
 
 
 
