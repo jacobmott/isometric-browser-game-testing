@@ -32,7 +32,8 @@ export class BoardComponent implements OnInit {
     tileHeight: 100,
     hasChanged: false,
     offsetX: 0,
-    offsetY: 0
+    offsetY: 0,
+    alternateDebugGridLine: 1
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -52,14 +53,14 @@ export class BoardComponent implements OnInit {
   tileWidth: number = 100;
   tileHeight: number = 100;
   levelData: number [][] = [
-    [20,20,20,20,20,20,20,20,20,20,23],
-    [20,20,20,20,20,20,20,20,20,20,20],
-    [20,20,20,20,20,20,20,20,20,20,20],
-    [20,20,20,20,20,20,20,0,20,20,20],
-    [20,20,20,20,20,20,20,20,20,20,20],
-    [20,20,20,20,20,20,20,20,20,20,20],
-    [20,20,20,20,20,20,20,20,20,20,20],
-    [25,20,20,20,20,20,20,20,20,20,24]
+    [20,13,13,13,13,13,13,13,13,13,23],
+    [13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,0, 13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13],
+    [25,13,13,13,13,13,13,13,13,13,24]
   ];
 
 
@@ -134,7 +135,8 @@ export class BoardComponent implements OnInit {
   fpsCount: number = 0;
   fps: number = 60;
   startTime: number = 0;
-
+  SVGgridImg: any;
+  initialized: boolean = false;
 
 
 //########################################################################################################
@@ -143,6 +145,44 @@ export class BoardComponent implements OnInit {
 //########################################################################################################  
   constructor() { 
   }
+
+
+
+  drawGrid() {
+
+      this.ctx.drawImage(this.SVGgridImg, 0, 0);
+
+  }
+                                                                        
+  initGrid(){
+      
+    //https://stackoverflow.com/questions/28690643/firefox-error-rendering-an-svg-image-to-html5-canvas-with-drawimage
+    //https://bugzilla.mozilla.org/show_bug.cgi?id=700533
+    //Not using percentages for width and height seems to work for all browswers
+    var data = `
+    <svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg" >             
+      <defs>                                                                        
+        <pattern id="smallGrid" width="25" height="25" patternUnits="userSpaceOnUse">                                                                      
+          <path d="M 25 0 L 0 0 0 25" fill="none" stroke="black" stroke-width="0.5"/>                                                                      
+        </pattern>                                                                      
+        <pattern id="grid" width="200" height="100" patternUnits="userSpaceOnUse">                                                                      
+          <rect width="200" height="100" fill="url(#smallGrid)"/>                                                                      
+          <path d="M 200 0 L 0 0 0 200" fill="none" stroke="black" stroke-width="1"/>                                                                      
+        </pattern>                                                                      
+      </defs>                                                                       
+      <rect width="100%" height="100%" fill="url(#grid)" />                         
+    </svg>`;
+  
+    
+    this.SVGgridImg = new Image();
+    const svg = new Blob([data], {type: 'image/svg+xml'});
+    const url = URL.createObjectURL(svg);
+    let instance = this;
+    this.SVGgridImg.src = url;
+
+
+  }
+
 
 
 //########################################################################################################
@@ -168,6 +208,8 @@ export class BoardComponent implements OnInit {
     this.player.setSpeed(2);
     this.player.setDead(false);
 
+    this.initGrid();
+
     //Create our lookupmap so when we are looking through our level data we can lookup the sprite we need per tile
     this.initializeSpriteLookupMap();
 
@@ -177,6 +219,7 @@ export class BoardComponent implements OnInit {
     this.addSpriteForRenderingAndAnimating(2, 0, 0,0,0);
     this.addSpriteForRenderingAndAnimating(3, 0, 0,0,0);
     this.gameLoop();
+
   }
 
 
@@ -222,10 +265,12 @@ export class BoardComponent implements OnInit {
 
       this.ctx.clearRect (0, 0, this.canvasWidth, this.canvasHeight);
       this.drawAndAnimateSprites();
-    
+
       this.drawTimeAndFpsStats(this.timer.getSeconds());
       this.drawDebugInfo();
+      this.drawGrid();
       this.globalConfig.hasChanged = false;
+
     }, 1);
 
 }  

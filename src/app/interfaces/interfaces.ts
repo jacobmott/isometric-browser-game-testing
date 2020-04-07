@@ -66,4 +66,5 @@ export interface GlobalConfig{
   hasChanged: boolean;
   offsetX: number;
   offsetY: number;
+  alternateDebugGridLine: number;
 }

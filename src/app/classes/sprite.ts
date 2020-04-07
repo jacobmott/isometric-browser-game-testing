@@ -15,7 +15,7 @@ export class Sprite {
     cartisianPosY: number = 0;
     shown: boolean = true;
     zoomLevel: number = 1;
-    globalConfig: GlobalConfig = { zoomLevel: 1, canvasWidth: 1920, tileWidth: 200, tileHeight: 100, hasChanged: false, offsetX: 0, offsetY: 0 };
+    globalConfig: GlobalConfig = { zoomLevel: 1, canvasWidth: 1920, tileWidth: 200, tileHeight: 100, hasChanged: false, offsetX: 0, offsetY: 0, alternateDebugGridLine: 1 };
     ftime: number;
     zIndex: number = 0;
     spriteType: SpriteTypes = 0;
@@ -27,6 +27,8 @@ export class Sprite {
     screenPosY: number;
     screenPosX: number;
     firstInit: boolean = true;
+    debug: boolean = true;
+    toggleZindex: boolean = true;
 
 
     constructor(src: any, width: number, height: number, offsetX: number, offsetY: number, frames: number, duration: number, spriteType: SpriteTypes) {
@@ -250,16 +252,33 @@ export class Sprite {
         this.screenPosY = tilePositionY;
       }
       if (this.shown) {
-        //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
-        c.drawImage(this.spritesheet,
-                    this.offsetX,
-                    this.offsetY,
-                    this.width,
-                    this.height,
-                    this.screenPosX,
-                    this.screenPosY,
-                    this.globalConfig.tileWidth,
-                    this.globalConfig.tileHeight);
+        if (this.debug){
+          c.beginPath();
+          c.lineWidth = "3";
+          c.strokeStyle = this.globalConfig.alternateDebugGridLine%2 === 0 ? "blue" : "red";
+          ++this.globalConfig.alternateDebugGridLine;
+          c.rect(this.screenPosX, this.screenPosY, this.globalConfig.tileWidth, this.globalConfig.tileHeight);
+          c.stroke();
+          c.font = 'italic bold 10pt Courier';
+          c.fillStyle = "yellow";  //<======= here
+          c.fillRect(this.screenPosX, this.screenPosY, this.globalConfig.tileWidth/1.2, this.globalConfig.tileHeight/4);
+          c.fillStyle = "black";  //<======= here
+          c.fillText ("C:"+this.cartisianPosX+":"+this.cartisianPosY, this.screenPosX, this.screenPosY+12); 
+          c.fillText ("S:"+this.screenPosX+":"+this.screenPosY, this.screenPosX, this.screenPosY+24);  
+        } 
+        else{
+          //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+          c.drawImage(this.spritesheet,
+                      this.offsetX,
+                      this.offsetY,
+                      this.width,
+                      this.height,
+                      this.screenPosX,
+                      this.screenPosY,
+                      this.globalConfig.tileWidth,
+                      this.globalConfig.tileHeight);
+        }
+  
       }
     }  
 
