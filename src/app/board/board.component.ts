@@ -12,8 +12,6 @@ import { HostListener } from '@angular/core';
 })
 export class BoardComponent implements OnInit {
 
-
-//http://clintbellanger.net/articles/isometric_math/
   
 //########################################################################################################
 // member variables
@@ -33,7 +31,8 @@ export class BoardComponent implements OnInit {
     hasChanged: false,
     offsetX: 0,
     offsetY: 0,
-    alternateDebugGridLine: 1
+    alternateDebugGridLine: 1,
+    debug: false
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -62,7 +61,6 @@ export class BoardComponent implements OnInit {
     [13,13,13,13,13,13,13,13,13,13,13],
     [25,13,13,13,13,13,13,13,13,13,24]
   ];
-
 
 
   spriteTypesLookupMap: Map<number, Sprite> = new Map<number, Sprite>();
@@ -121,7 +119,6 @@ export class BoardComponent implements OnInit {
   }
 
 
-  
   @HostListener('document:keydown', ['$event'])
   onKeyDown(e){
     e = e || event; // to deal with IE
@@ -149,9 +146,7 @@ export class BoardComponent implements OnInit {
 
 
   drawGrid() {
-
-      this.ctx.drawImage(this.SVGgridImg, 0, 0);
-
+    this.ctx.drawImage(this.SVGgridImg, 0, 0);
   }
                                                                         
   initGrid(){
@@ -205,7 +200,7 @@ export class BoardComponent implements OnInit {
 
     this.player.setPoint2d({ x: 200, y: 500});
     this.player.setZindex(2);
-    this.player.setSpeed(2);
+    this.player.setSpeed(500);
     this.player.setDead(false);
 
     this.initGrid();
@@ -230,16 +225,15 @@ export class BoardComponent implements OnInit {
 //########################################################################################################
   gameLoop() {
 
-  
     this.gameLoopF = setInterval(() => {
       this.playerWalking = false;
       if(this.keyDown["d"]) {
-        this.player.point2d.x -= this.player.speed/this.fps;
+        this.player.point2d.x += this.player.speed/this.fps;
         this.playerWalking = true;
         this.currentPlayerSpriteId = 2;
       }
       if(this.keyDown["a"]) {
-        this.player.point2d.x += this.player.speed/this.fps;
+        this.player.point2d.x -= this.player.speed/this.fps;
         this.playerWalking = true;
         this.currentPlayerSpriteId = 1;
       }
@@ -259,9 +253,18 @@ export class BoardComponent implements OnInit {
         this.playerWalking = true;
         this.currentPlayerSpriteId = 0;
       }
+
+      if(this.keyDown["0"]) {
+        this.globalConfig.debug = !this.globalConfig.debug;
+      }      
  
+      //Update the current sprites position(So we can draw the sprite) from the players position
       this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
-      this.currentPlayerSprite.setCartisianPosition(this.player.point2d.x, this.player.point2d.y);
+      this.currentPlayerSprite.setCartisianScreenPosition(this.player.point2d.x, this.player.point2d.y);
+      let playersIsoPoint = this.playersCurrentTileLocation();
+      let isoColumnX: number = playersIsoPoint.x;
+      let isoRowY: number = playersIsoPoint.y;      
+      this.currentPlayerSprite.setIsoGridPosition(isoColumnX,isoRowY);
 
       this.ctx.clearRect (0, 0, this.canvasWidth, this.canvasHeight);
       this.drawAndAnimateSprites();
@@ -295,14 +298,15 @@ export class BoardComponent implements OnInit {
 //########################################################################################################
   initializeSpritesPositionAndZindexRenderMapFromBoardLevelData(){
 
-    let index: number = 0;
+    //https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
     for (let column: number = 0; column < this.columns; column++){
       for (let row: number = 0; row < this.rows; row++){
-        let tilePositionX = ((row - column) * (this.tileWidth/2)) + (this.globalConfig.offsetX);
-        let tilePositionY = (row + column) * (this.tileHeight/2);
+        //We need to convert from ISO coords TO x/y plane (cartesian) coords
+        let cartesianScreenCoordsX = ((column - row) * (this.tileWidth/2)) + (this.globalConfig.offsetX);
+        let cartesianScreenCoordsY = (column + row) * (this.tileHeight/2);
         let spriteType = this.levelData[row][column];        
-        this.addSpriteForRenderingAndAnimating(spriteType, Math.round(tilePositionX), Math.round(tilePositionY), row, column);
-        ++index;
+        console.log(row+" : "+column+" t:"+spriteType);
+        this.addSpriteForRenderingAndAnimating(spriteType, Math.round(cartesianScreenCoordsX), Math.round(cartesianScreenCoordsY), row, column);
       }
     }
 
@@ -313,43 +317,45 @@ export class BoardComponent implements OnInit {
 // addSpriteForRenderingAndAnimating
 //
 //########################################################################################################
-addSpriteForRenderingAndAnimating(spriteType: number, x: number, y: number, row: number, column: number) {
+addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: number, cartesianScreenCoordsY: number, isoRowY: number, isoColumnX: number) {
   this.spriteMapLookupIdSequence += 1;
 
   //Clone the tile so we have a copy, all objects are passed by reference in typescript
   let sprite: Sprite = this.spriteTypesLookupMap.get(spriteType);
   let clonedSprite: Sprite = sprite.deepClone();
-  clonedSprite.setCartisianPosition(column, row);
-  clonedSprite.setScreenPosition(x, y);  
-  clonedSprite.setMapLookupId(this.spriteMapLookupIdSequence);
+  //column is our x, row is our y
+  clonedSprite.setCartisianScreenPosition(cartesianScreenCoordsX, cartesianScreenCoordsY);
+  clonedSprite.setIsoGridPosition(isoColumnX,isoRowY);
+  clonedSprite.setRenderMapLookupId(this.spriteMapLookupIdSequence);
 
   if (clonedSprite.getZindex() === 0){
     if (clonedSprite.getSpriteType() === SpriteTypes.GROUND){
-      this.groundTileSpritesZIndex0.set(clonedSprite.getMapLookupId(), clonedSprite);
+      this.groundTileSpritesZIndex0.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
     }
   }
 
   if (clonedSprite.getZindex() === 1){
     if (clonedSprite.getSpriteType() === SpriteTypes.BUILDING){
-      this.buildingTileSpritesZIndex1.set(clonedSprite.getMapLookupId(), clonedSprite);
+      this.buildingTileSpritesZIndex1.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
     }
   }
 
   if (clonedSprite.getZindex() === 2){
     if (clonedSprite.getSpriteType() === SpriteTypes.PLAYER){
-      clonedSprite.setMapLookupId(sprite.getMapLookupId());
-      if (clonedSprite.getMapLookupId() > 0){
+      clonedSprite.setRenderMapLookupId(sprite.getMapLookupId());
+      if (clonedSprite.getRenderMapLookupId() > 0){
         let startingPlayerSprite: Sprite = this.playerTileSpritesZIndex2.get(0);
-        clonedSprite.setCartisianPosition(startingPlayerSprite.getCartisianPosition().x, startingPlayerSprite.getCartisianPosition().y);
+        clonedSprite.setCartisianScreenPosition(startingPlayerSprite.getCartisianScreenPosition().x, startingPlayerSprite.getCartisianScreenPosition().y);
+        clonedSprite.setIsoGridPosition(startingPlayerSprite.getIsoGridPosition().x,startingPlayerSprite.getIsoGridPosition().y);
       }
       else{
-        this.player.point2d.x = column;
-        this.player.point2d.y = row;
+        this.player.point2d.x = cartesianScreenCoordsX;
+        this.player.point2d.y = cartesianScreenCoordsY;
       }
-      this.playerTileSpritesZIndex2.set(clonedSprite.getMapLookupId(), clonedSprite);
+      this.playerTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
     }
     else if (clonedSprite.getSpriteType() === SpriteTypes.ENEMY){
-      this.entityTileSpritesZIndex2.set(clonedSprite.getMapLookupId(), clonedSprite);
+      this.entityTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
     }
   }
 
@@ -374,9 +380,6 @@ addSpriteForRenderingAndAnimating(spriteType: number, x: number, y: number, row:
     else{
       this.currentPlayerSprite.draw(this.ctx);
     }
-    //this.playerTileSpritesZIndex2.forEach((sprite: Sprite, key: number) => {
-    //  sprite.draw(this.ctx);
-    //});
     this.entityTileSpritesZIndex2.forEach((sprite: Sprite, key: number) => {
       sprite.draw(this.ctx);
     });
@@ -395,7 +398,6 @@ addSpriteForRenderingAndAnimating(spriteType: number, x: number, y: number, row:
     screenX = screenX - ((this.canvasWidth / 2)+(this.tileWidth/2));
     let tileX = Math.trunc((screenY / (this.tileHeight)) + (screenX / this.tileWidth));
     let tileY = Math.trunc((screenY / (this.tileHeight)) - (screenX / this.tileWidth));
-    //console.log("Tile X: "+tileX+" : "+"Y: "+tileY+" : Was clicked!");
     let point: Point2d = {
       x: tileX,
       y: tileY
@@ -405,7 +407,8 @@ addSpriteForRenderingAndAnimating(spriteType: number, x: number, y: number, row:
 
 //########################################################################################################
 // playersCurrentTileLocation
-//
+//  This calculates the edge of our box.. the top left corner on the screen is the edge of the box.
+//  The the real player probably should have the point in the center of themselves for this calculation
 //########################################################################################################
 playersCurrentTileLocation(): Point2d{
 
@@ -415,7 +418,6 @@ playersCurrentTileLocation(): Point2d{
    screenX = screenX - ((this.canvasWidth / 2)+(this.tileWidth/2));
    let tileX = Math.trunc((screenY / (this.tileHeight)) + (screenX / this.tileWidth));
    let tileY = Math.trunc((screenY / (this.tileHeight)) - (screenX / this.tileWidth));
-   //console.log("Tile X: "+tileX+" : "+"Y: "+tileY+" : Was clicked!");
    let point: Point2d = {
      x: tileX,
      y: tileY
@@ -619,7 +621,7 @@ drawTimeAndFpsStats(timeStamp) {
     this.fpsCount++;
   }
 
-  this.ctx.font = '14px _sans';
+  this.ctx.font = 'italic bold 10pt Courier';
   this.ctx.fillText ("Elapsed Time: " + (timeStamp - this.startTime) + " Seconds", 10, 20);
   this.ctx.fillText ("FPS: " + this.fps, 10, 40);
 
@@ -629,51 +631,25 @@ drawTimeAndFpsStats(timeStamp) {
 
 //########################################################################################################
 // drawDebugInfo() {
-
 //
 //########################################################################################################
 drawDebugInfo() {
 
+  this.ctx.font = 'italic bold 10pt Courier';
 
-  //if(this.keyDown["d"]) {
-  //  this.player.point2d.x += this.player.speed/this.fps;
-  //  this.playerWalking = true;
-  //  this.currentPlayerSpriteId = 2;
-  //}
-  //if(this.keyDown["a"]) {
-  //  this.player.point2d.x -= this.player.speed/this.fps;
-  //  this.playerWalking = true;
-  //  this.currentPlayerSpriteId = 1;
-  //}
-  //if(this.keyDown["w"]) {
-  //  this.player.point2d.y -=  this.player.speed/this.fps;
-  //  this.playerWalking = true;
-  //  this.currentPlayerSpriteId = 3;
-  //}
-  //if(this.keyDown["s"]) {
-  //  this.player.point2d.y +=  this.player.speed/this.fps;
-  //  this.playerWalking = true;
-  //  this.currentPlayerSpriteId = 0;
-  //}
-//
-  //let tileGridLocationRow = this.currentPlayerSprite.tileGridLocationRow;
-  //let tileGridLocationColumn = this.currentPlayerSprite.tileGridLocationColumn;
-  //this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
+  this.ctx.fillText ("CONTROLS: ", 10, 100);
+  this.ctx.fillText ("W,A,S,D to move: ", 10, 114);
+  this.ctx.fillText ("Scroll up and down on mouse scrollwheel to zoom in/out ", 10, 128);  
+  this.ctx.fillText ("Tap 0(zero) to toggle debug info on the map on/off: ", 10, 142);  
+
+  this.ctx.fillText ("LEGEND: ", 10, 172);
+  this.ctx.fillText ("Ct: Cartesian(Screen) coordinates (X/Y)", 10, 184);
+  this.ctx.fillText ("Is: Isometric Tile/Grid coordinates (Column(X)/Row(Y))", 10, 196);  
 
 
-  let playerLeftDKey = this.playerTileSpritesZIndex2.get(2);
-  let playerRightAKey = this.playerTileSpritesZIndex2.get(1);
-  let playerUpWKey = this.playerTileSpritesZIndex2.get(3);
-  let playerDownSKey = this.playerTileSpritesZIndex2.get(0);
-
-  this.ctx.font = '14px _sans';
-  this.ctx.fillText ("playersCurrentTileLocation: "+"Column: "+this.playersCurrentTileLocation().x+" : "+"Row: "+this.playersCurrentTileLocation().y, 10, 300);
-  this.ctx.fillText ("playerLeftDKeyCurrentPosition: "+playerLeftDKey.getCartisianPosition().x+" : "+playerLeftDKey.getCartisianPosition().y, 10, 320);
-  this.ctx.fillText ("playerRightAKeyCurrentPosition: "+playerRightAKey.getCartisianPosition().x+" : "+playerRightAKey.getCartisianPosition().y, 10, 340);  
-  this.ctx.fillText ("playerUpWKeyCurrentPosition: "+playerUpWKey.getCartisianPosition().x+" : "+playerUpWKey.getCartisianPosition().y, 10, 360);  
-  this.ctx.fillText ("playerDownSKeyCurrentPosition: "+playerDownSKey.getCartisianPosition().x+" : "+playerDownSKey.getCartisianPosition().y, 10, 380);  
-  //this.ctx.fillText ("playerLeftDKeyTileLocation: "+playerLeftDKey.screenPosX+" : "+playerLeftDKey.screenPosY, 10, 400);  
-      
+  this.ctx.fillText ("CURRENT PLAYER LOCATION INFO: ", 10, 234);
+  this.ctx.fillText ("Ct: x: "+this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 248);  
+  this.ctx.fillText ("Ct: y: "+this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 262);          
   
 }
  
@@ -681,3 +657,4 @@ drawDebugInfo() {
 
 
 }
+

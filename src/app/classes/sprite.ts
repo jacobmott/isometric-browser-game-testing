@@ -3,7 +3,8 @@ import { SpriteTypes, GlobalConfig, Point2d } from '../interfaces/interfaces'
 export class Sprite {
 
     spritesheet: HTMLImageElement = null;
-    mapLookupId: number; 
+    mapLookupId: number;
+    originalMapLookupId: number;
     offsetX: number = 0;
     offsetY: number = 0;
     width: number;
@@ -11,24 +12,24 @@ export class Sprite {
     frames: number = 1;
     currentFrame: number = 0;
     duration: number = 1;
-    cartisianPosX: number = 0;
-    cartisianPosY: number = 0;
     shown: boolean = true;
     zoomLevel: number = 1;
-    globalConfig: GlobalConfig = { zoomLevel: 1, canvasWidth: 1920, tileWidth: 200, tileHeight: 100, hasChanged: false, offsetX: 0, offsetY: 0, alternateDebugGridLine: 1 };
+    globalConfig: GlobalConfig = { zoomLevel: 1, canvasWidth: 1920, tileWidth: 200, tileHeight: 100, hasChanged: false, offsetX: 0, offsetY: 0, alternateDebugGridLine: 1, debug: false };
     ftime: number;
     zIndex: number = 0;
     spriteType: SpriteTypes = 0;
     tileWidth: number;
     tileHeight: number;
-    tileGridLocationRow: number;
-    tileGridLocationColumn: number;
     isStatic: boolean = true;
-    screenPosY: number;
-    screenPosX: number;
     firstInit: boolean = true;
     debug: boolean = true;
     toggleZindex: boolean = true;
+
+    renderMapLookupId: number;
+    isoColumnX: number = 0;
+    isoRowY: number = 0;
+    cartisianScreenPosX: number = 0;
+    cartisianScreenPosY: number = 0;
 
 
     constructor(src: any, width: number, height: number, offsetX: number, offsetY: number, frames: number, duration: number, spriteType: SpriteTypes) {
@@ -65,12 +66,11 @@ export class Sprite {
       sprite.setTileWidth(this.tileWidth);
       sprite.setTileHeight(this.tileHeight);
       sprite.setGlobalConfig(this.globalConfig);
-      sprite.setTileGridLocation(this.tileGridLocationRow, this.tileGridLocationColumn);
+      //sprite.setTileGridLocation(this.tileGridLocationRow, this.tileGridLocationColumn);
       sprite.setIsStatic(this.isStatic);
-      sprite.screenPosY = this.screenPosY;
-      sprite.screenPosX = this.screenPosX;
-      sprite.cartisianPosX = this.cartisianPosX;
-      sprite.cartisianPosY = this.cartisianPosY;
+      sprite.setCartisianScreenPosition(this.getCartisianScreenPosition().x, this.getCartisianScreenPosition().y);
+      sprite.setIsoGridPosition(this.getIsoGridPosition().x, this.getIsoGridPosition().y);
+      sprite.setMapLookupId(this.mapLookupId);
       return sprite;
     }
 
@@ -78,10 +78,6 @@ export class Sprite {
       this.isStatic = isStatic;
     }
 
-    setTileGridLocation(tileGridLocationRow: number, tileGridLocationColumn: number) {
-      this.tileGridLocationRow = tileGridLocationRow;
-      this.tileGridLocationColumn = tileGridLocationColumn;
-    }
 
     setMapLookupId(id: number) {
       this.mapLookupId = id;
@@ -89,6 +85,16 @@ export class Sprite {
     getMapLookupId() {
       return this.mapLookupId;
     }
+
+
+    setRenderMapLookupId(id: number) {
+      this.renderMapLookupId = id;
+    }
+    getRenderMapLookupId() {
+      return this.renderMapLookupId;
+    }
+
+    
 
     setGlobalConfig(globalConfig: GlobalConfig) {
       this.globalConfig = globalConfig;
@@ -156,21 +162,21 @@ export class Sprite {
     }
 
     //Isometric coordinates
-    setScreenPosition(x: number, y: number) {
-      this.screenPosX = x;
-      this.screenPosY = y;
+    setIsoGridPosition(isoColumnX: number, isoRowY: number) {
+      this.isoColumnX = isoColumnX;
+      this.isoRowY = isoRowY;
     }
-    getScreenPosition(): Point2d {
-     return { x: this.screenPosX, y: this.screenPosY };
+    getIsoGridPosition(): Point2d {
+     return { x: this.isoColumnX, y: this.isoRowY };
     }
 
     
-    setCartisianPosition(x: number, y: number) {
-      this.cartisianPosX = x;
-      this.cartisianPosY = y;
+    setCartisianScreenPosition(x: number, y: number) {
+      this.cartisianScreenPosX = x;
+      this.cartisianScreenPosY = y;
     }
-    getCartisianPosition(): Point2d {
-     return { x: this.cartisianPosX, y: this.cartisianPosY };
+    getCartisianScreenPosition(): Point2d {
+     return { x: this.cartisianScreenPosX, y: this.cartisianScreenPosY };
     }
 
     getZindex() {
@@ -237,34 +243,27 @@ export class Sprite {
         }
       }
     }
+
+    roundCorrectly(num: number){
+      return Math.round((num + Number.EPSILON) * 100) / 100;
+    }
     
     draw(c) {
-
-      //If the user has zoomed, then the position has changed and we need to recacluate it
-      // only needs to be done for static sprites that are not moving
-      if (this.globalConfig.hasChanged || this.firstInit || !this.isStatic){
-        this.firstInit = false;
-        let row = this.cartisianPosY;
-        let column = this.cartisianPosX;
-        let tilePositionX = ((row - column) * (this.globalConfig.tileWidth/2)) + (this.globalConfig.offsetX);
-        let tilePositionY = (row + column) * (this.globalConfig.tileHeight/2) + (this.globalConfig.offsetY);
-        this.screenPosX = tilePositionX;
-        this.screenPosY = tilePositionY;
-      }
       if (this.shown) {
-        if (this.debug){
+        if (this.globalConfig.debug){
           c.beginPath();
           c.lineWidth = "3";
           c.strokeStyle = this.globalConfig.alternateDebugGridLine%2 === 0 ? "blue" : "red";
           ++this.globalConfig.alternateDebugGridLine;
-          c.rect(this.screenPosX, this.screenPosY, this.globalConfig.tileWidth, this.globalConfig.tileHeight);
+          c.rect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.tileWidth, this.globalConfig.tileHeight);
           c.stroke();
           c.font = 'italic bold 10pt Courier';
           c.fillStyle = "yellow";  //<======= here
-          c.fillRect(this.screenPosX, this.screenPosY, this.globalConfig.tileWidth/1.2, this.globalConfig.tileHeight/4);
+          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.tileWidth/1.2, this.globalConfig.tileHeight/2.5);
           c.fillStyle = "black";  //<======= here
-          c.fillText ("C:"+this.cartisianPosX+":"+this.cartisianPosY, this.screenPosX, this.screenPosY+12); 
-          c.fillText ("S:"+this.screenPosX+":"+this.screenPosY, this.screenPosX, this.screenPosY+24);  
+          c.fillText ("Ct:"+this.roundCorrectly(this.cartisianScreenPosX)+":"+this.roundCorrectly(this.cartisianScreenPosY), this.cartisianScreenPosX, this.cartisianScreenPosY+12); 
+          c.fillText ("Is:"+this.isoRowY+":"+this.isoColumnX, this.cartisianScreenPosX, this.cartisianScreenPosY+24); 
+          c.fillText ("Tp:"+this.getMapLookupId(), this.cartisianScreenPosX, this.cartisianScreenPosY+36);
         } 
         else{
           //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
@@ -273,8 +272,8 @@ export class Sprite {
                       this.offsetY,
                       this.width,
                       this.height,
-                      this.screenPosX,
-                      this.screenPosY,
+                      this.cartisianScreenPosX,
+                      this.cartisianScreenPosY,
                       this.globalConfig.tileWidth,
                       this.globalConfig.tileHeight);
         }
