@@ -14,7 +14,7 @@ export class Sprite {
     duration: number = 1;
     shown: boolean = true;
     zoomLevel: number = 1;
-    globalConfig: GlobalConfig = { zoomLevel: 1, canvasWidth: 1920, tileWidth: 200, tileHeight: 100, hasChanged: false, offsetX: 0, offsetY: 0, alternateDebugGridLine: 1, debug: false };
+    globalConfig: GlobalConfig;
     ftime: number;
     zIndex: number = 0;
     spriteType: SpriteTypes = 0;

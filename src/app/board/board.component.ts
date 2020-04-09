@@ -18,8 +18,6 @@ export class BoardComponent implements OnInit {
 //
 //########################################################################################################  
 
-  isoOffsetX: number = 400;
-  isoOffsetY: number = 0;
   canvasWidth: number;
   canvasHeight: number;
 
@@ -32,7 +30,9 @@ export class BoardComponent implements OnInit {
     offsetX: 0,
     offsetY: 0,
     alternateDebugGridLine: 1,
-    debug: false
+    debug: false,
+    initialOffsetX: 0,
+    initialOffsetY: 0    
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -41,8 +41,8 @@ export class BoardComponent implements OnInit {
   entityTileSpritesZIndex2: Map<number, Sprite> = new Map<number, Sprite>();
   spriteMapLookupIdSequence: number = 0;  
   lastScrollTop: number = 0;
-  rows: number =  8;
-  columns: number = 11;
+  rows: number =  24;
+  columns: number = 22;
   //we did have 200 to 100 before .. which is 2 to 1.. but thats not a true isometric projection
   //Technically, isometric tiles cannot have a width/height ratio of 2:1. 
   //The ratio actually has to be 1.732:1 for the angular properties to be preserved. What we call an "isometric" projection is actually a dimetric projection
@@ -52,14 +52,31 @@ export class BoardComponent implements OnInit {
   tileWidth: number = 100;
   tileHeight: number = 100;
   levelData: number [][] = [
-    [20,13,13,13,13,13,13,13,13,13,23],
-    [13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,0, 13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13],
-    [25,13,13,13,13,13,13,13,13,13,24]
+    [20,13,13,13,13,13,13,13,13,13,23,20,13,13,13,13,13,13,13,13,13,23],
+    [13,0,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13, 13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [25,13,13,13,13,13,13,13,13,13,24,25,13,13,13,13,13,13,13,13,13,24],
+    [20,13,13,13,13,13,13,13,13,13,23,20,13,13,13,13,13,13,13,13,13,23],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13, 13,13,13,13,13,13,13,13,13,13,13, 13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [25,13,13,13,13,13,13,13,13,13,24,25,13,13,13,13,13,13,13,13,13,24],
+    [20,13,13,13,13,13,13,13,13,13,23,20,13,13,13,13,13,13,13,13,13,23],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+    [25,13,13,13,13,13,13,13,13,13,24,25,13,13,13,13,13,13,13,13,13,24]
+    
   ];
 
 
@@ -96,7 +113,7 @@ export class BoardComponent implements OnInit {
       this.globalConfig.zoomLevel += 0.5;
       this.globalConfig.tileWidth = this.globalConfig.tileWidth * 0.5;
       this.globalConfig.tileHeight = this.globalConfig.tileHeight * 0.5;
-      this.globalConfig.offsetY += 400;
+      //this.globalConfig.offsetY += 400;
       this.globalConfig.hasChanged = true;
     }
     if(event.deltaY<0){
@@ -104,7 +121,7 @@ export class BoardComponent implements OnInit {
       this.globalConfig.tileWidth = this.globalConfig.tileWidth / 0.5;
       this.globalConfig.tileHeight = this.globalConfig.tileHeight / 0.5;
       //this.globalConfig.offsetY = this.centerIso;
-      this.globalConfig.offsetY -= 400;
+      //this.globalConfig.offsetY -= 400;
       this.globalConfig.hasChanged = true;
     }
   }
@@ -189,18 +206,16 @@ export class BoardComponent implements OnInit {
     this.canvas.nativeElement.width  = this.canvas.nativeElement.offsetWidth;
     this.canvas.nativeElement.height = this.canvas.nativeElement.offsetHeight;
 
-    this.isoOffsetX = this.canvas.nativeElement.width/2;
-
     this.canvasWidth = this.canvas.nativeElement.width;
     this.canvasHeight = this.canvas.nativeElement.height;
 
     this.globalConfig.canvasWidth = this.canvasWidth;
     
-    this.globalConfig.offsetX = this.canvasWidth/2;
+   this.globalConfig.initialOffsetX = this.canvasWidth/2;
 
     this.player.setPoint2d({ x: 200, y: 500});
     this.player.setZindex(2);
-    this.player.setSpeed(500);
+    this.player.setSpeed(300);
     this.player.setDead(false);
 
     this.initGrid();
@@ -283,13 +298,53 @@ export class BoardComponent implements OnInit {
 // initializeSpriteLookupMap
 //
 //########################################################################################################
-  initializeSpriteLookupMap(){
-
+  initializeSpriteLookupMap(){  
     this.addGroundSpritesToLookupMap();
     this.addBuildingSpritesToLookupMap();
     this.addPlayerSpritesToLookupMap();
-  
   }
+
+
+//########################################################################################################
+// whatTileWasClicked
+//
+//########################################################################################################
+  whatTileWasClicked(): Point2d{
+
+   let screenX = this.mouseCurrentPosEvent.clientX;
+   let screenY = this.mouseCurrentPosEvent.clientY;
+
+   screenX = screenX - ((this.canvasWidth / 2)+(this.tileWidth/2));
+   let tileX = Math.trunc((screenY / (this.tileHeight)) + (screenX / this.tileWidth));
+   let tileY = Math.trunc((screenY / (this.tileHeight)) - (screenX / this.tileWidth));
+   let point: Point2d = {
+     x: tileX,
+     y: tileY
+   };
+   return point;
+ }
+
+//########################################################################################################
+// playersCurrentTileLocation
+//  This calculates the edge of our box.. the top left corner on the screen is the edge of the box.
+//  The the real player probably should have the point in the center of themselves for this calculation
+//########################################################################################################
+  playersCurrentTileLocation(): Point2d{
+  
+   let screenX = this.player.point2d.x;
+   let screenY = this.player.point2d.y;
+  
+    screenX = screenX - ((this.canvasWidth / 2)+(this.tileWidth/2)) + (this.globalConfig.offsetY + this.globalConfig.initialOffsetY);
+    screenY = screenY + + (this.globalConfig.offsetY + this.globalConfig.initialOffsetY);
+    let tileX = Math.trunc((screenY / (this.tileHeight)) + (screenX / this.tileWidth));
+    let tileY = Math.trunc((screenY / (this.tileHeight)) - (screenX / this.tileWidth));
+    let point: Point2d = {
+      x: tileX,
+      y: tileY
+    };
+    return point;
+  }
+
 
 
 //########################################################################################################
@@ -302,8 +357,8 @@ export class BoardComponent implements OnInit {
     for (let column: number = 0; column < this.columns; column++){
       for (let row: number = 0; row < this.rows; row++){
         //We need to convert from ISO coords TO x/y plane (cartesian) coords
-        let cartesianScreenCoordsX = ((column - row) * (this.tileWidth/2)) + (this.globalConfig.offsetX);
-        let cartesianScreenCoordsY = (column + row) * (this.tileHeight/2);
+        let cartesianScreenCoordsX = ((column - row) * (this.tileWidth/2)) + (this.globalConfig.offsetX + this.globalConfig.initialOffsetX);
+        let cartesianScreenCoordsY = (column + row) * (this.tileHeight/2) + (this.globalConfig.offsetY + this.globalConfig.initialOffsetY);
         let spriteType = this.levelData[row][column];        
         console.log(row+" : "+column+" t:"+spriteType);
         this.addSpriteForRenderingAndAnimating(spriteType, Math.round(cartesianScreenCoordsX), Math.round(cartesianScreenCoordsY), row, column);
@@ -385,45 +440,6 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
     });
   }
 
-
-//########################################################################################################
-// whatTileWasClicked
-//
-//########################################################################################################
-  whatTileWasClicked(): Point2d{
-
-   let screenX = this.mouseCurrentPosEvent.clientX;
-   let screenY = this.mouseCurrentPosEvent.clientY;
-
-    screenX = screenX - ((this.canvasWidth / 2)+(this.tileWidth/2));
-    let tileX = Math.trunc((screenY / (this.tileHeight)) + (screenX / this.tileWidth));
-    let tileY = Math.trunc((screenY / (this.tileHeight)) - (screenX / this.tileWidth));
-    let point: Point2d = {
-      x: tileX,
-      y: tileY
-    };
-    return point;
-  }
-
-//########################################################################################################
-// playersCurrentTileLocation
-//  This calculates the edge of our box.. the top left corner on the screen is the edge of the box.
-//  The the real player probably should have the point in the center of themselves for this calculation
-//########################################################################################################
-playersCurrentTileLocation(): Point2d{
-
-  let screenX = this.player.point2d.x;
-  let screenY = this.player.point2d.y;
-
-   screenX = screenX - ((this.canvasWidth / 2)+(this.tileWidth/2));
-   let tileX = Math.trunc((screenY / (this.tileHeight)) + (screenX / this.tileWidth));
-   let tileY = Math.trunc((screenY / (this.tileHeight)) - (screenX / this.tileWidth));
-   let point: Point2d = {
-     x: tileX,
-     y: tileY
-   };
-   return point;
- }
 
 
 //########################################################################################################
