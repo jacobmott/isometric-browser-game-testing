@@ -50,6 +50,15 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
     * https://stackoverflow.com/questions/10214873/make-canvas-as-wide-and-as-high-as-parent
     * This seems to be the only formula that works
     * https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
+    * http://www.petercollingridge.co.uk/tutorials/svg/isometric-projection/
+
+* Matrices
+  * https://blog.demofox.org/2017/03/31/orthogonal-projection-matrix-plainly-explained/
+  * https://stackoverflow.com/questions/1189830/isometric-projection-in-2d-coordinate-system    
+  * https://gamedev.stackexchange.com/questions/25159/matrix-for-2d-perspective
+  * https://www.khanacademy.org/math/linear-algebra/matrix-transformations/lin-trans-examples/v/rotation-in-r3-around-the-x-axis
+  * https://www.mathworks.com/help/phased/ref/rotz.html
+  * https://en.wikipedia.org/wiki/Isometric_projection
 
 
 *  Making Isometric Social Real-Time Games with HTML5, CSS3, and JavaScript (Code/github)
@@ -67,6 +76,9 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 
 * Isometric Tiles Math
     * http://clintbellanger.net/articles/isometric_math/    
+
+* Isometric tutorials
+    * https://www.kirupa.com/developer/isometric/index.htm
 
 
 

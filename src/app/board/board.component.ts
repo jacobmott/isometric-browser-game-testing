@@ -3,7 +3,9 @@ import { Sprite} from '../classes/sprite';
 import { Entity} from '../classes/entity';
 import { Timer } from '../classes/timer';
 import { Point2d, SpriteTypes, GlobalConfig } from '../interfaces/interfaces';
+import * as Utils from '../utils/utils'
 import { HostListener } from '@angular/core';
+import * as glMatrix from 'gl-matrix';
 
 @Component({
   selector: 'app-board',
@@ -34,6 +36,9 @@ export class BoardComponent implements OnInit {
     initialOffsetX: 0,
     initialOffsetY: 0    
   }
+
+
+  isoMatrix: glMatrix.mat3;
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
   buildingTileSpritesZIndex1: Map<number, Sprite> = new Map<number, Sprite>();
@@ -218,6 +223,59 @@ export class BoardComponent implements OnInit {
     this.player.setSpeed(300);
     this.player.setDead(false);
 
+    //https://www.khanacademy.org/math/linear-algebra/matrix-transformations/lin-trans-examples/v/rotation-in-r3-around-the-x-axis
+    //Matrix to rotate about the x axis by 45 degrees
+    //column 0 (x)
+    let m01xRot = 1;
+    let m02xRot = 0;
+    let m03xRot = 0;
+ 35.264
+    //column 1 (y)
+    let m10xRot = 0;
+    let m11xRot = Math.cos(Utils.degreeToRadian(45));
+    let m12xRot = Math.sin(Utils.degreeToRadian(45));
+
+    //column 2 (z)
+    let m20xRot = 0;
+    let m21xRot = Math.sin(Utils.degreeToRadian(45))*-1;
+    let m22xRot = Math.cos(Utils.degreeToRadian(45));
+
+    let isoXRotationMatrix = glMatrix.mat3.fromValues(
+      m01xRot, m02xRot, m03xRot,
+      m10xRot, m11xRot, m12xRot,
+      m20xRot, m21xRot, m22xRot
+    );
+
+
+
+    //Matrix to rotate about the Z axis by 35.264
+    //https://en.wikipedia.org/wiki/Isometric_projection
+    //column 0 (x)
+    let m01zRot = Math.cos(Utils.degreeToRadian(35.264));
+    let m02zRot = Math.sin(Utils.degreeToRadian(35.264));
+    let m03zRot = 0;
+ 
+    //column 1 (y)
+    let m10zRot = Math.sin(Utils.degreeToRadian(35.264))*-1;
+    let m11zRot = Math.cos(Utils.degreeToRadian(35.264));
+    let m12zRot = 0;
+
+    //column 2 (z)
+    let m20zRot = 0;
+    let m21zRot = 0;
+    let m22zRot = 1;
+
+    let isoZRotationMatrix = glMatrix.mat3.fromValues(
+      m01zRot, m02zRot, m03zRot,
+      m10zRot, m11zRot, m12zRot,
+      m20zRot, m21zRot, m22zRot
+    );
+
+    this.isoMatrix = glMatrix.mat3.create();
+    //figure out our isometric Matrix
+    glMatrix.mat3.multiply(this.isoMatrix, isoXRotationMatrix, isoZRotationMatrix);
+
+
     this.initGrid();
 
     //Create our lookupmap so when we are looking through our level data we can lookup the sprite we need per tile
@@ -334,8 +392,7 @@ export class BoardComponent implements OnInit {
    let screenX = this.player.point2d.x;
    let screenY = this.player.point2d.y;
   
-    screenX = screenX - ((this.canvasWidth / 2)+(this.tileWidth/2)) + (this.globalConfig.offsetY + this.globalConfig.initialOffsetY);
-    screenY = screenY + + (this.globalConfig.offsetY + this.globalConfig.initialOffsetY);
+    screenX = screenX - (this.tileWidth/2) ;
     let tileX = Math.trunc((screenY / (this.tileHeight)) + (screenX / this.tileWidth));
     let tileY = Math.trunc((screenY / (this.tileHeight)) - (screenX / this.tileWidth));
     let point: Point2d = {
@@ -357,8 +414,8 @@ export class BoardComponent implements OnInit {
     for (let column: number = 0; column < this.columns; column++){
       for (let row: number = 0; row < this.rows; row++){
         //We need to convert from ISO coords TO x/y plane (cartesian) coords
-        let cartesianScreenCoordsX = ((column - row) * (this.tileWidth/2)) + (this.globalConfig.offsetX + this.globalConfig.initialOffsetX);
-        let cartesianScreenCoordsY = (column + row) * (this.tileHeight/2) + (this.globalConfig.offsetY + this.globalConfig.initialOffsetY);
+        let cartesianScreenCoordsX = ((column - row) * (this.tileWidth/2));
+        let cartesianScreenCoordsY = (column + row) * (this.tileHeight/2) ;
         let spriteType = this.levelData[row][column];        
         console.log(row+" : "+column+" t:"+spriteType);
         this.addSpriteForRenderingAndAnimating(spriteType, Math.round(cartesianScreenCoordsX), Math.round(cartesianScreenCoordsY), row, column);
@@ -653,19 +710,46 @@ drawDebugInfo() {
 
   this.ctx.font = 'italic bold 10pt Courier';
 
-  this.ctx.fillText ("CONTROLS: ", 10, 100);
-  this.ctx.fillText ("W,A,S,D to move: ", 10, 114);
-  this.ctx.fillText ("Scroll up and down on mouse scrollwheel to zoom in/out ", 10, 128);  
-  this.ctx.fillText ("Tap 0(zero) to toggle debug info on the map on/off: ", 10, 142);  
+  this.ctx.fillText ("CONTROLS: ", 1300, 100);
+  this.ctx.fillText ("W,A,S,D to move: ", 1300, 114);
+  this.ctx.fillText ("Scroll up and down on mouse scrollwheel to zoom in/out ", 1300, 128);  
+  this.ctx.fillText ("Tap 0(zero) to toggle debug info on the map on/off: ", 1300, 142);  
+  
+  this.ctx.fillText ("LEGEND: ", 1300, 172);
+  this.ctx.fillText ("Ct: Cartesian(Screen) coordinates (X/Y)", 1300, 184);
+  this.ctx.fillText ("Is: Isometric Tile/Grid coordinates (Column(X)/Row(Y))", 1300, 196);  
+  
+  
+  this.ctx.fillText ("CURRENT PLAYER LOCATION INFO: ", 1300, 234);
+  this.ctx.fillText ("Ct: x: "+this.currentPlayerSprite.getCartisianScreenPosition().x, 1300, 248);  
+  this.ctx.fillText ("Ct: y: "+this.currentPlayerSprite.getCartisianScreenPosition().y, 1300, 262);  
+  
+  let playerVector = glMatrix.vec3.fromValues(this.currentPlayerSprite.getCartisianScreenPosition().x, this.currentPlayerSprite.getCartisianScreenPosition().y, 0);
+  let newVector = glMatrix.vec3.create();
+  glMatrix.vec3.transformMat3(newVector, playerVector, this.isoMatrix);
+  
+  this.ctx.fillText ("MATRIX MULTIPLY RESULTS:", 1300, 300);
+  this.ctx.fillText ("(isoMatrix times player cartisian coordinates", 1300, 314);  
+  this.ctx.fillText ("gives us the iso coordinates)", 1300, 328);   
+  this.ctx.fillText ("x: "+newVector[0], 1300, 342);  
+  this.ctx.fillText ("y: "+newVector[1], 1300, 356);  
+  this.ctx.fillText ("z: "+newVector[2], 1300, 370);   
+  
+  
+  let invertedIsoMatrix = glMatrix.mat3.create();
+  glMatrix.mat3.invert(invertedIsoMatrix,  this.isoMatrix);
+  
+  let newVector2 = glMatrix.vec3.create();
+  glMatrix.vec3.transformMat3(newVector2, newVector, invertedIsoMatrix);  
+  
+  
+  this.ctx.fillText ("MATRIX MULTIPLY RESULTS:", 1300, 398);
+  this.ctx.fillText ("(player iso coordinates times inverse isoMatrix,", 1300, 412);  
+  this.ctx.fillText ("gives us player cartisian coordinates)", 1300, 426);    
+  this.ctx.fillText ("x: "+newVector2[0], 1300, 440);  
+  this.ctx.fillText ("y: "+newVector2[1], 1300, 454);  
+  this.ctx.fillText ("z: "+newVector2[2], 1300, 468);   
 
-  this.ctx.fillText ("LEGEND: ", 10, 172);
-  this.ctx.fillText ("Ct: Cartesian(Screen) coordinates (X/Y)", 10, 184);
-  this.ctx.fillText ("Is: Isometric Tile/Grid coordinates (Column(X)/Row(Y))", 10, 196);  
-
-
-  this.ctx.fillText ("CURRENT PLAYER LOCATION INFO: ", 10, 234);
-  this.ctx.fillText ("Ct: x: "+this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 248);  
-  this.ctx.fillText ("Ct: y: "+this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 262);          
   
 }
  
