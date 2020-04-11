@@ -250,11 +250,16 @@ export class Sprite {
     
     draw(c) {
       if (this.shown) {
-        if (this.globalConfig.debug){
+        //if (this.globalConfig.debug){
           c.beginPath();
           c.lineWidth = "3";
           c.strokeStyle = this.globalConfig.alternateDebugGridLine%2 === 0 ? "blue" : "red";
           ++this.globalConfig.alternateDebugGridLine;
+
+
+          if (this.cartisianScreenPosX < 1 && this.cartisianScreenPosY < 1){
+            console.log("I exists.. why dont you show me!?");
+          }
           c.rect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.tileWidth, this.globalConfig.tileHeight);
           c.stroke();
           c.font = 'italic bold 10pt Courier';
@@ -264,19 +269,19 @@ export class Sprite {
           c.fillText ("Ct:"+this.roundCorrectly(this.cartisianScreenPosX)+":"+this.roundCorrectly(this.cartisianScreenPosY), this.cartisianScreenPosX, this.cartisianScreenPosY+12); 
           c.fillText ("Is:"+this.isoRowY+":"+this.isoColumnX, this.cartisianScreenPosX, this.cartisianScreenPosY+24); 
           c.fillText ("Tp:"+this.getMapLookupId(), this.cartisianScreenPosX, this.cartisianScreenPosY+36);
-        } 
-        else{
-          //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
-          c.drawImage(this.spritesheet,
-                      this.offsetX,
-                      this.offsetY,
-                      this.width,
-                      this.height,
-                      this.cartisianScreenPosX,
-                      this.cartisianScreenPosY,
-                      this.globalConfig.tileWidth,
-                      this.globalConfig.tileHeight);
-        }
+        //} 
+       //else{
+       //  //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+       //  c.drawImage(this.spritesheet,
+       //              this.offsetX,
+       //              this.offsetY,
+       //              this.width,
+       //              this.height,
+       //              this.cartisianScreenPosX,
+       //              this.cartisianScreenPosY,
+       //              this.globalConfig.tileWidth,
+       //              this.globalConfig.tileHeight);
+       //}
   
       }
     }  

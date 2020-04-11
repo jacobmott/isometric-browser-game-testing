@@ -38,6 +38,7 @@ export class BoardComponent implements OnInit {
   }
 
 
+  isoTranslationMatrix: glMatrix.mat3;
   isoMatrix: glMatrix.mat3;
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -46,42 +47,28 @@ export class BoardComponent implements OnInit {
   entityTileSpritesZIndex2: Map<number, Sprite> = new Map<number, Sprite>();
   spriteMapLookupIdSequence: number = 0;  
   lastScrollTop: number = 0;
-  rows: number =  24;
-  columns: number = 22;
+  rows: number =  11;
+  columns: number = 10;
   //we did have 200 to 100 before .. which is 2 to 1.. but thats not a true isometric projection
   //Technically, isometric tiles cannot have a width/height ratio of 2:1. 
   //The ratio actually has to be 1.732:1 for the angular properties to be preserved. What we call an "isometric" projection is actually a dimetric projection
   //Anyway, FWIW, 2:1 is much easier math-wise. I'm not sure using real isometric angles would be worth the extra effort.
   //I was just reading Wikipedia and saw the same thing about dimetric projection actually being used instead of isometric projection, but I guess everybody 
   //still calls it isometric projection anyways.
-  tileWidth: number = 100;
-  tileHeight: number = 100;
+  tileWidth: number = 200; //10 width 2000 pixels (columns)
+  tileHeight: number = 100; //11 height 1100 pixels (rows)
   levelData: number [][] = [
-    [20,13,13,13,13,13,13,13,13,13,23,20,13,13,13,13,13,13,13,13,13,23],
-    [13,0,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13, 13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [25,13,13,13,13,13,13,13,13,13,24,25,13,13,13,13,13,13,13,13,13,24],
-    [20,13,13,13,13,13,13,13,13,13,23,20,13,13,13,13,13,13,13,13,13,23],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13, 13,13,13,13,13,13,13,13,13,13,13, 13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [25,13,13,13,13,13,13,13,13,13,24,25,13,13,13,13,13,13,13,13,13,24],
-    [20,13,13,13,13,13,13,13,13,13,23,20,13,13,13,13,13,13,13,13,13,23],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-    [25,13,13,13,13,13,13,13,13,13,24,25,13,13,13,13,13,13,13,13,13,24]
-    
+    [20,13,13,13,13,13,13,13,13,23],
+    [13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13],
+    [13,13,13,13,13,13,13,13,13,13],
+    [25,13,13,13,13,13,13,13,13,24] 
   ];
 
 
@@ -113,7 +100,7 @@ export class BoardComponent implements OnInit {
 
   @HostListener('wheel', ['$event']) 
   onMousewheel(event) {
-    console.log(event);
+    //console.log(event);
     if(event.deltaY>0){
       this.globalConfig.zoomLevel += 0.5;
       this.globalConfig.tileWidth = this.globalConfig.tileWidth * 0.5;
@@ -229,7 +216,7 @@ export class BoardComponent implements OnInit {
     let m01xRot = 1;
     let m02xRot = 0;
     let m03xRot = 0;
- 35.264
+
     //column 1 (y)
     let m10xRot = 0;
     let m11xRot = Math.cos(Utils.degreeToRadian(45));
@@ -251,13 +238,13 @@ export class BoardComponent implements OnInit {
     //Matrix to rotate about the Z axis by 35.264
     //https://en.wikipedia.org/wiki/Isometric_projection
     //column 0 (x)
-    let m01zRot = Math.cos(Utils.degreeToRadian(35.264));
-    let m02zRot = Math.sin(Utils.degreeToRadian(35.264));
+    let m01zRot = Math.cos(Utils.degreeToRadian(35));
+    let m02zRot = Math.sin(Utils.degreeToRadian(35));
     let m03zRot = 0;
  
     //column 1 (y)
-    let m10zRot = Math.sin(Utils.degreeToRadian(35.264))*-1;
-    let m11zRot = Math.cos(Utils.degreeToRadian(35.264));
+    let m10zRot = Math.sin(Utils.degreeToRadian(35))*-1;
+    let m11zRot = Math.cos(Utils.degreeToRadian(35));
     let m12zRot = 0;
 
     //column 2 (z)
@@ -275,6 +262,30 @@ export class BoardComponent implements OnInit {
     //figure out our isometric Matrix
     glMatrix.mat3.multiply(this.isoMatrix, isoXRotationMatrix, isoZRotationMatrix);
 
+
+    //Matrix to rotate about the Z axis by 35.264
+    //https://en.wikipedia.org/wiki/Isometric_projection
+    //column 0 (x)
+    let m01 = 1;
+    let m02 = 0;
+    let m03 = 0;
+ 
+    //column 1 (y)
+    let m10 = 0;
+    let m11 = 1;
+    let m12 = 0;
+
+    //column 2 (z)
+    let m20 = 0;
+    let m21 = 0;
+    let m22 = 1;
+
+    //2 to 1 dimetric ratio, translation matrix
+    this.isoTranslationMatrix = glMatrix.mat3.fromValues(
+      m01, m02, m03,
+      m10, m11, m12,
+      m20, m21, m22
+    );
 
     this.initGrid();
 
@@ -332,18 +343,18 @@ export class BoardComponent implements OnInit {
       }      
  
       //Update the current sprites position(So we can draw the sprite) from the players position
-      this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
-      this.currentPlayerSprite.setCartisianScreenPosition(this.player.point2d.x, this.player.point2d.y);
-      let playersIsoPoint = this.playersCurrentTileLocation();
-      let isoColumnX: number = playersIsoPoint.x;
-      let isoRowY: number = playersIsoPoint.y;      
-      this.currentPlayerSprite.setIsoGridPosition(isoColumnX,isoRowY);
+      //this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
+      //this.currentPlayerSprite.setCartisianScreenPosition(this.player.point2d.x, this.player.point2d.y);
+      //let playersIsoPoint = this.playersCurrentTileLocation();
+      //let isoColumnX: number = playersIsoPoint.x;
+      //let isoRowY: number = playersIsoPoint.y;      
+      //this.currentPlayerSprite.setIsoGridPosition(isoColumnX,isoRowY);
 
       this.ctx.clearRect (0, 0, this.canvasWidth, this.canvasHeight);
       this.drawAndAnimateSprites();
 
-      this.drawTimeAndFpsStats(this.timer.getSeconds());
-      this.drawDebugInfo();
+      //this.drawTimeAndFpsStats(this.timer.getSeconds());
+      //this.drawDebugInfo();
       this.drawGrid();
       this.globalConfig.hasChanged = false;
 
@@ -414,11 +425,18 @@ export class BoardComponent implements OnInit {
     for (let column: number = 0; column < this.columns; column++){
       for (let row: number = 0; row < this.rows; row++){
         //We need to convert from ISO coords TO x/y plane (cartesian) coords
-        let cartesianScreenCoordsX = ((column - row) * (this.tileWidth/2));
-        let cartesianScreenCoordsY = (column + row) * (this.tileHeight/2) ;
+        //let cartesianScreenCoordsX = ((column - row) * (this.tileWidth/2));
+        //let cartesianScreenCoordsY = (column + row) * (this.tileHeight/2);
         let spriteType = this.levelData[row][column];        
-        console.log(row+" : "+column+" t:"+spriteType);
-        this.addSpriteForRenderingAndAnimating(spriteType, Math.round(cartesianScreenCoordsX), Math.round(cartesianScreenCoordsY), row, column);
+        //console.log(row+" : "+column+" t:"+spriteType);
+        let x = column * this.tileWidth;
+        let y = row * this.tileHeight;
+        let placementVector = glMatrix.vec3.fromValues(x,y,0);
+        let newPlacementVector = glMatrix.vec3.create();
+        glMatrix.vec3.transformMat3(newPlacementVector, placementVector, this.isoMatrix);
+        let cartesianScreenCoordsX = newPlacementVector[0];
+        let cartesianScreenCoordsY = newPlacementVector[1];
+        this.addSpriteForRenderingAndAnimating(spriteType, cartesianScreenCoordsX, cartesianScreenCoordsY, row, column);
       }
     }
 
@@ -451,25 +469,25 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
       this.buildingTileSpritesZIndex1.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
     }
   }
-
-  if (clonedSprite.getZindex() === 2){
-    if (clonedSprite.getSpriteType() === SpriteTypes.PLAYER){
-      clonedSprite.setRenderMapLookupId(sprite.getMapLookupId());
-      if (clonedSprite.getRenderMapLookupId() > 0){
-        let startingPlayerSprite: Sprite = this.playerTileSpritesZIndex2.get(0);
-        clonedSprite.setCartisianScreenPosition(startingPlayerSprite.getCartisianScreenPosition().x, startingPlayerSprite.getCartisianScreenPosition().y);
-        clonedSprite.setIsoGridPosition(startingPlayerSprite.getIsoGridPosition().x,startingPlayerSprite.getIsoGridPosition().y);
-      }
-      else{
-        this.player.point2d.x = cartesianScreenCoordsX;
-        this.player.point2d.y = cartesianScreenCoordsY;
-      }
-      this.playerTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
-    }
-    else if (clonedSprite.getSpriteType() === SpriteTypes.ENEMY){
-      this.entityTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
-    }
-  }
+//
+  //if (clonedSprite.getZindex() === 2){
+  //  if (clonedSprite.getSpriteType() === SpriteTypes.PLAYER){
+  //    clonedSprite.setRenderMapLookupId(sprite.getMapLookupId());
+  //    if (clonedSprite.getRenderMapLookupId() > 0){
+  //      let startingPlayerSprite: Sprite = this.playerTileSpritesZIndex2.get(0);
+  //      clonedSprite.setCartisianScreenPosition(startingPlayerSprite.getCartisianScreenPosition().x, startingPlayerSprite.getCartisianScreenPosition().y);
+  //      clonedSprite.setIsoGridPosition(startingPlayerSprite.getIsoGridPosition().x,startingPlayerSprite.getIsoGridPosition().y);
+  //    }
+  //    else{
+  //      this.player.point2d.x = cartesianScreenCoordsX;
+  //      this.player.point2d.y = cartesianScreenCoordsY;
+  //    }
+  //    this.playerTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
+  //  }
+  //  else if (clonedSprite.getSpriteType() === SpriteTypes.ENEMY){
+  //    this.entityTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
+  //  }
+  //}
 
 }
 
@@ -486,15 +504,15 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
     this.buildingTileSpritesZIndex1.forEach((sprite: Sprite, key: number) => {
       sprite.draw(this.ctx);
     });
-    if (this.playerWalking){
-      this.currentPlayerSprite.animate(this.ctx, this.timer);
-    }
-    else{
-      this.currentPlayerSprite.draw(this.ctx);
-    }
-    this.entityTileSpritesZIndex2.forEach((sprite: Sprite, key: number) => {
-      sprite.draw(this.ctx);
-    });
+    //if (this.playerWalking){
+    //  this.currentPlayerSprite.animate(this.ctx, this.timer);
+    //}
+    //else{
+    //  this.currentPlayerSprite.draw(this.ctx);
+    //}
+    //this.entityTileSpritesZIndex2.forEach((sprite: Sprite, key: number) => {
+    //  sprite.draw(this.ctx);
+    //});
   }
 
 
@@ -720,35 +738,35 @@ drawDebugInfo() {
   this.ctx.fillText ("Is: Isometric Tile/Grid coordinates (Column(X)/Row(Y))", 1300, 196);  
   
   
-  this.ctx.fillText ("CURRENT PLAYER LOCATION INFO: ", 1300, 234);
-  this.ctx.fillText ("Ct: x: "+this.currentPlayerSprite.getCartisianScreenPosition().x, 1300, 248);  
-  this.ctx.fillText ("Ct: y: "+this.currentPlayerSprite.getCartisianScreenPosition().y, 1300, 262);  
-  
-  let playerVector = glMatrix.vec3.fromValues(this.currentPlayerSprite.getCartisianScreenPosition().x, this.currentPlayerSprite.getCartisianScreenPosition().y, 0);
-  let newVector = glMatrix.vec3.create();
-  glMatrix.vec3.transformMat3(newVector, playerVector, this.isoMatrix);
-  
-  this.ctx.fillText ("MATRIX MULTIPLY RESULTS:", 1300, 300);
-  this.ctx.fillText ("(isoMatrix times player cartisian coordinates", 1300, 314);  
-  this.ctx.fillText ("gives us the iso coordinates)", 1300, 328);   
-  this.ctx.fillText ("x: "+newVector[0], 1300, 342);  
-  this.ctx.fillText ("y: "+newVector[1], 1300, 356);  
-  this.ctx.fillText ("z: "+newVector[2], 1300, 370);   
-  
-  
-  let invertedIsoMatrix = glMatrix.mat3.create();
-  glMatrix.mat3.invert(invertedIsoMatrix,  this.isoMatrix);
-  
-  let newVector2 = glMatrix.vec3.create();
-  glMatrix.vec3.transformMat3(newVector2, newVector, invertedIsoMatrix);  
-  
-  
-  this.ctx.fillText ("MATRIX MULTIPLY RESULTS:", 1300, 398);
-  this.ctx.fillText ("(player iso coordinates times inverse isoMatrix,", 1300, 412);  
-  this.ctx.fillText ("gives us player cartisian coordinates)", 1300, 426);    
-  this.ctx.fillText ("x: "+newVector2[0], 1300, 440);  
-  this.ctx.fillText ("y: "+newVector2[1], 1300, 454);  
-  this.ctx.fillText ("z: "+newVector2[2], 1300, 468);   
+ // this.ctx.fillText ("CURRENT PLAYER LOCATION INFO: ", 1300, 234);
+ // this.ctx.fillText ("Ct: x: "+this.currentPlayerSprite.getCartisianScreenPosition().x, 1300, 248);  
+ // this.ctx.fillText ("Ct: y: "+this.currentPlayerSprite.getCartisianScreenPosition().y, 1300, 262);  
+ // 
+ // let playerVector = glMatrix.vec3.fromValues(this.currentPlayerSprite.getCartisianScreenPosition().x, this.currentPlayerSprite.getCartisianScreenPosition().y, 0);
+ // let newVector = glMatrix.vec3.create();
+ // glMatrix.vec3.transformMat3(newVector, playerVector, this.isoMatrix);
+ // 
+ // this.ctx.fillText ("MATRIX MULTIPLY RESULTS:", 1300, 300);
+ // this.ctx.fillText ("(isoMatrix times player cartisian coordinates", 1300, 314);  
+ // this.ctx.fillText ("gives us the iso coordinates)", 1300, 328);   
+ // this.ctx.fillText ("x: "+newVector[0], 1300, 342);  
+ // this.ctx.fillText ("y: "+newVector[1], 1300, 356);  
+ // this.ctx.fillText ("z: "+newVector[2], 1300, 370);   
+ // 
+ // 
+ // let invertedIsoMatrix = glMatrix.mat3.create();
+ // glMatrix.mat3.invert(invertedIsoMatrix,  this.isoMatrix);
+ // 
+ // let newVector2 = glMatrix.vec3.create();
+ // glMatrix.vec3.transformMat3(newVector2, newVector, invertedIsoMatrix);  
+ // 
+ // 
+ // this.ctx.fillText ("MATRIX MULTIPLY RESULTS:", 1300, 398);
+ // this.ctx.fillText ("(player iso coordinates times inverse isoMatrix,", 1300, 412);  
+ // this.ctx.fillText ("gives us player cartisian coordinates)", 1300, 426);    
+ // this.ctx.fillText ("x: "+newVector2[0], 1300, 440);  
+ // this.ctx.fillText ("y: "+newVector2[1], 1300, 454);  
+ // this.ctx.fillText ("z: "+newVector2[2], 1300, 468);   
 
   
 }

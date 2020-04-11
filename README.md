@@ -59,6 +59,7 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
   * https://www.khanacademy.org/math/linear-algebra/matrix-transformations/lin-trans-examples/v/rotation-in-r3-around-the-x-axis
   * https://www.mathworks.com/help/phased/ref/rotz.html
   * https://en.wikipedia.org/wiki/Isometric_projection
+  * https://robotics.stackexchange.com/questions/10702/rotation-matrix-sign-convention-confusion
 
 
 *  Making Isometric Social Real-Time Games with HTML5, CSS3, and JavaScript (Code/github)
@@ -79,6 +80,19 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 
 * Isometric tutorials
     * https://www.kirupa.com/developer/isometric/index.htm
+    * https://gamedev.stackexchange.com/questions/58728/camera-angle-for-dimetric-projection
+    * https://www.compuphase.com/axometr.htm
+    * https://www.kirupa.com/developer/isometric/perspective.htm
+
+
+* VS Code help stuff
+    * https://codinglatte.com/posts/angular/debugging-angular-apps-vscode/
+    * https://github.com/microsoft/vscode/issues/73817
+    * https://code.visualstudio.com/docs/editor/integrated-terminal
+
+* Iso metric world exapmles js code
+    * https://github.com/j03m/trafficcone
+
 
 
 
