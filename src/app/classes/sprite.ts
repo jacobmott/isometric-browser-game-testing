@@ -252,7 +252,7 @@ export class Sprite {
       if (this.shown) {
         if (this.globalConfig.debug){
           c.beginPath();
-          c.lineWidth = "3";
+          c.lineWidth = 3;
           c.strokeStyle = this.globalConfig.alternateDebugGridLine%2 === 0 ? "blue" : "red";
           ++this.globalConfig.alternateDebugGridLine;
           c.rect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.tileWidth, this.globalConfig.tileHeight);

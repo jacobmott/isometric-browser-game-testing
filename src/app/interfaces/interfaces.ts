@@ -61,6 +61,7 @@ export enum SpriteTypes {
 export interface GlobalConfig{
   zoomLevel: number;
   canvasWidth: number;
+  canvasHeight: number;
   tileWidth: number;
   tileHeight: number;
   hasChanged: boolean;
@@ -70,4 +71,12 @@ export interface GlobalConfig{
   debug: boolean;
   initialOffsetX: number;
   initialOffsetY: number;
+  boardCellWidth: number;
+  boardCellHeight: number;
+  boardCellsWide: number;
+  boardCellsHeigh: number;
+  boardCenterPointX: number;
+  boardCenterPointY: number;
+  boardCenterCellNumberX: number;
+  boardCenterCellNumberY: number;
 }
