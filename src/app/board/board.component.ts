@@ -246,7 +246,7 @@ createLevelData() {
 //########################################################################################################
 getRandomLevelData() {
 
-  return 13;
+  //return 13;
   let setToChooseFrom = Utils.getRandomArbitrary(SpriteTypes.GROUND, SpriteTypes.BUILDING);
 
   //default 13 ground
