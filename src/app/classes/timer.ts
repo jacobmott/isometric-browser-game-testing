@@ -4,9 +4,11 @@ export class Timer {
  * A simple timer
  */
   date: Date;
+  startTime: number = 0; //Seconds when we started
 
   constructor() {
-	  this.date = new Date();
+    this.date = new Date();
+    this.startTime = this.getSeconds();
   }
 
   update() {
@@ -20,6 +22,10 @@ export class Timer {
   	
   getSeconds() {
   	return Math.round(this.date.getTime() / 1000);
+  }
+
+  getStartTime(){
+    return this.startTime;
   }
 
 

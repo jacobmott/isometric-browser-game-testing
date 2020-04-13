@@ -53,13 +53,15 @@ export interface Player {
 export enum SpriteTypes {
   GROUND = 1,
   BUILDING = 2,
-  PLAYER = 3,
-  ENEMY = 4
+  ENEMY = 3,
+  PLAYER = 4,
 }
 
 
 export interface GlobalConfig{
   zoomLevel: number;
+  zoomFactor: number;
+  zoomPercent: number;
   canvasWidth: number;
   canvasHeight: number;
   tileWidth: number;
@@ -79,4 +81,8 @@ export interface GlobalConfig{
   boardCenterPointY: number;
   boardCenterCellNumberX: number;
   boardCenterCellNumberY: number;
+  boardCenterCellNumberXOld: number;
+  boardCenterCellNumberYOld: number;
+  boardCellWidthInitial: number;
+  boardCellHeightInitial: number;
 }

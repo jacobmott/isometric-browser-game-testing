@@ -252,16 +252,16 @@ export class Sprite {
       if (this.shown) {
         if (this.globalConfig.debug){
           c.beginPath();
-          c.lineWidth = 3;
+          c.lineWidth = 1;
           c.strokeStyle = this.globalConfig.alternateDebugGridLine%2 === 0 ? "blue" : "red";
           ++this.globalConfig.alternateDebugGridLine;
-          c.rect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.tileWidth, this.globalConfig.tileHeight);
+          c.rect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.boardCellWidth, this.globalConfig.boardCellHeight);
           c.stroke();
           c.font = 'italic bold 10pt Courier';
           c.fillStyle = "yellow";  //<======= here
-          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.tileWidth/1.2, this.globalConfig.tileHeight/2.5);
+          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.boardCellWidth/1.2, this.globalConfig.boardCellHeight/2.5);
           c.fillStyle = "black";  //<======= here
-          c.fillText ("Ct:"+this.roundCorrectly(this.cartisianScreenPosX)+":"+this.roundCorrectly(this.cartisianScreenPosY), this.cartisianScreenPosX, this.cartisianScreenPosY+12); 
+          c.fillText ("Ct:"+this.cartisianScreenPosX.toFixed(2)+":"+this.cartisianScreenPosY.toFixed(2), this.cartisianScreenPosX, this.cartisianScreenPosY+12); 
           c.fillText ("Is:"+this.isoRowY+":"+this.isoColumnX, this.cartisianScreenPosX, this.cartisianScreenPosY+24); 
           c.fillText ("Tp:"+this.getMapLookupId(), this.cartisianScreenPosX, this.cartisianScreenPosY+36);
         } 
@@ -274,8 +274,8 @@ export class Sprite {
                       this.height,
                       this.cartisianScreenPosX,
                       this.cartisianScreenPosY,
-                      this.globalConfig.tileWidth,
-                      this.globalConfig.tileHeight);
+                      this.globalConfig.boardCellWidth,
+                      this.globalConfig.boardCellHeight);
         }
   
       }
