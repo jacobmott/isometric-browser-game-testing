@@ -24,6 +24,7 @@ export class Sprite {
     firstInit: boolean = true;
     debug: boolean = true;
     toggleZindex: boolean = true;
+    isClicked: boolean = false;
 
     renderMapLookupId: number;
     isoColumnX: number = 0;
@@ -85,6 +86,11 @@ export class Sprite {
     getMapLookupId() {
       return this.mapLookupId;
     }
+
+    setIsClicked(isClicked: boolean) {
+      this.isClicked = isClicked;
+    }
+    
 
 
     setRenderMapLookupId(id: number) {
@@ -276,6 +282,12 @@ export class Sprite {
                       this.cartisianScreenPosY,
                       this.globalConfig.boardCellWidth,
                       this.globalConfig.boardCellHeight);
+        }
+        if (this.isClicked){
+          c.globalAlpha = 0.3;
+          c.fillStyle = "yellow";
+          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.boardCellWidth, this.globalConfig.boardCellHeight);
+          c.globalAlpha = 1.0;
         }
   
       }

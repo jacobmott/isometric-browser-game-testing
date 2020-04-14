@@ -45,14 +45,23 @@ export class BoardComponent implements OnInit {
     boardCenterCellNumberXOld: 0,
     boardCenterCellNumberYOld: 0,
     boardCellWidthInitial: 0,
-    boardCellHeightInitial: 0
+    boardCellHeightInitial: 0,
+    boardHeight: 0,
+    boardWidth: 0,
+    boardOffsetX: 0,
+    boardCellWidthDifference: 0,
+    boardCellHeightDifference: 0
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
   buildingTileSpritesZIndex1: Map<number, Sprite> = new Map<number, Sprite>();
   playerTileSpritesZIndex2: Map<number, Sprite> = new Map<number, Sprite>();
   entityTileSpritesZIndex2: Map<number, Sprite> = new Map<number, Sprite>();
-  spriteMapLookupIdSequence: number = 0;  
+  spriteMapLookupIdSequence: number = 0;
+  allSprites: Map<string, Sprite> = new Map<string, Sprite>();
+
+
+  clickedCell: Point2d = {x: 0, y: 0};
 
   spriteTypesLookupMap: Map<number, Sprite> = new Map<number, Sprite>();
   currentPlayerSpriteId: number = 0;
@@ -102,8 +111,11 @@ export class BoardComponent implements OnInit {
   
      this.mouseCurrentPos.clientX *= this.ctx.canvas.width;
      this.mouseCurrentPos.clientY *= this.ctx.canvas.height;
-    //let point: Point2d = this.whatTileWasClicked();
-  }
+     this.clickedCell = this.whatCellWasClicked();
+     let spriteId = this.clickedCell.x.toString()+this.clickedCell.y.toString();
+     let sprite = this.allSprites.get(spriteId);
+     sprite.setIsClicked(true);
+    }
 
   @HostListener('wheel', ['$event']) 
   onMousewheel(event) {
@@ -123,8 +135,8 @@ export class BoardComponent implements OnInit {
       if(event.deltaY>0){
         this.globalConfig.zoomLevel -= 1;
         //this.globalConfig.zoomFactor = 1 - this.globalConfig.zoomPercent;
-        if (this.globalConfig.zoomLevel < -7){ 
-          this.globalConfig.zoomLevel = -7;
+        if (this.globalConfig.zoomLevel < -8){ 
+          this.globalConfig.zoomLevel = -8;
           return;
         }
         this.globalConfig.zoomPercent -= 0.1;
@@ -132,14 +144,18 @@ export class BoardComponent implements OnInit {
       if(event.deltaY<0){
         this.globalConfig.zoomLevel += 1;
         //.globalConfig.zoomFactor = 1 + this.globalConfig.zoomPercent;
-        if (this.globalConfig.zoomLevel > 5){ 
-          this.globalConfig.zoomLevel = 5;
-          return;
-        }
+        //if (this.globalConfig.zoomLevel > 60){ 
+        //  this.globalConfig.zoomLevel = 60;
+        //  return;
+        //}
         this.globalConfig.zoomPercent += 0.1;
       }
+      let cellWidthOrig = this.globalConfig.boardCellWidth;
+      let cellHeightOrig = this.globalConfig.boardCellHeight;
       this.globalConfig.boardCellWidth = Math.round((this.globalConfig.boardCellWidthInitial) * this.globalConfig.zoomPercent);
       this.globalConfig.boardCellHeight = Math.round((this.globalConfig.boardCellHeightInitial) * this.globalConfig.zoomPercent);
+      this.globalConfig.boardCellWidthDifference = cellWidthOrig - this.globalConfig.boardCellWidth;
+      this.globalConfig.boardCellHeightDifference = cellHeightOrig - this.globalConfig.boardCellHeight;      
       this.globalConfig.hasChanged = true;
       this.reconfigureBoardSettings();
       //this.updateCenter();
@@ -234,7 +250,7 @@ createLevelData() {
   }
 
   //lets set something special in the center cell so we can tell which one it is
-  this.levelData[this.globalConfig.boardCenterCellNumberX][this.globalConfig.boardCenterCellNumberY] = 26;
+  //this.levelData[this.globalConfig.boardCenterCellNumberX][this.globalConfig.boardCenterCellNumberY] = 26;
 
 }
 
@@ -332,20 +348,24 @@ getRandomLevelData() {
 
 
 //########################################################################################################
-// whatTileWasClicked
-// TODO: Need to fix this
+// whatCellWasClicked
+// https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
 //########################################################################################################
-  whatTileWasClicked(): Point2d{
+  whatCellWasClicked(): Point2d {
 
    let screenX = this.mouseCurrentPos.clientX;
    let screenY = this.mouseCurrentPos.clientY;
+   //You’ll notice that I start with subtracting 438 from the mouse cursor’s x-coordinate. 
+   //This is because I added 400 to the x-coordinate when drawing the tiles, 
+   //so I have to subtract this again (as well as half a tile width) before calculating which tile the mouse is over.
+   
+   screenX = screenX - (this.globalConfig.boardOffsetX+(this.globalConfig.boardCellWidth/2));
+   let columnX = Math.trunc((screenY / (this.globalConfig.boardCellHeight)) + (screenX / this.globalConfig.boardCellWidth));
+   let rowY = Math.trunc((screenY / (this.globalConfig.boardCellHeight)) - (screenX / this.globalConfig.boardCellWidth));
 
-   screenX = screenX - ((this.globalConfig.canvasWidth / 2)+(this.globalConfig.boardCellWidth/2));
-   let tileX = Math.trunc((screenY / (this.globalConfig.boardCellHeight)) + (screenX / this.globalConfig.boardCellWidth));
-   let tileY = Math.trunc((screenY / (this.globalConfig.boardCellHeight)) - (screenX / this.globalConfig.boardCellWidth));
    let point: Point2d = {
-     x: tileX,
-     y: tileY
+     x: columnX,
+     y: rowY
    };
    return point;
  }
@@ -414,8 +434,10 @@ reconfigureBoardSettings() {
   console.log("boardCenterPointY: "+this.globalConfig.boardCenterPointY);    
   console.log("boardCenterCellNumberX: "+this.globalConfig.boardCenterCellNumberX);
   console.log("boardCenterCellNumberY: "+this.globalConfig.boardCenterCellNumberY);  
+  this.globalConfig.boardWidth = this.globalConfig.boardCellsWide * this.globalConfig.boardCellWidth;
+  this.globalConfig.boardHeight = this.globalConfig.boardCellsHeigh * this.globalConfig.boardCellHeight;  
 
-
+  this.globalConfig.boardOffsetX = (this.globalConfig.canvasWidth/2 - (this.globalConfig.boardCellWidth/2));
 }  
 
 
@@ -480,20 +502,10 @@ reconfigureBoardSettings() {
 
   this.globalConfig.boardCellWidthInitial =this.globalConfig.boardCellWidth;
   this.globalConfig.boardCellHeightInitial =this.globalConfig.boardCellHeight;
+  this.globalConfig.boardWidth = this.globalConfig.boardCellsWide * this.globalConfig.boardCellWidth;
+  this.globalConfig.boardHeight = this.globalConfig.boardCellsHeigh * this.globalConfig.boardCellHeight;  
 
-
-}
-
-//########################################################################################################
-// updateCenter
-//
-//########################################################################################################
-updateCenter() {
-  
-  
-  this.levelData[this.globalConfig.boardCenterCellNumberXOld][this.globalConfig.boardCenterCellNumberYOld] = 20;
-  this.levelData[this.globalConfig.boardCenterCellNumberX][this.globalConfig.boardCenterCellNumberY] = 26;
-
+  this.globalConfig.boardOffsetX = (this.globalConfig.canvasWidth/2 - (this.globalConfig.boardCellWidth/2));
 }
 
 
@@ -515,47 +527,41 @@ reinitializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
   let cellWidth = this.globalConfig.boardCellWidth;
   let cellHeight = this.globalConfig.boardCellHeight;
 
-  //lets figure out what the offsets need to be to center our board
-  let column = this.globalConfig.boardCenterCellNumberX;
-  let row = this.globalConfig.boardCenterCellNumberY;
-  //These are our isommetric (diemetric technically) coordinates in screen coords,
-  //meaning.. we have the isometric coords, but we havve maped them to screen coords
-  //This here is telling us where the center of our isometric grid of tiles should be in screen coords/space
-  //so we should just be able to offset every tile by this much to "center" our grid
-  let centerCell = {
-    x: (row-column)*(cellWidth/2),
-    y: (row+column)*(cellHeight/2)
-  };
-  //console.log("boardCenterCellNumberX: "+column);
-  //console.log("boardCenterCellNumberY: "+row);
-  let offsetXToCenterIsoGrid = Math.abs( (this.globalConfig.boardCenterPointX)-Math.abs(centerCell.x) );
-  let offsetYToCenterIsoGrid = Math.abs( (this.globalConfig.boardCenterPointY)-Math.abs(centerCell.y) );
-  //console.log("offsetXToCenterIsoGrid: "+offsetXToCenterIsoGrid);
-  //console.log("offsetYToCenterIsoGrid: "+offsetYToCenterIsoGrid);
-
-  offsetXToCenterIsoGrid = this.mouseCurrentPos.clientX;
-  offsetYToCenterIsoGrid = this.mouseCurrentPos.clientY;
-
   this.groundTileSpritesZIndex0.forEach((sprite: Sprite, key: number) => {
     let row = sprite.getIsoGridPosition().y;
-    let column = sprite.getIsoGridPosition().x;    
+    let column = sprite.getIsoGridPosition().x;
+    let x = (row-column)*(cellWidth/2);
     let center = {
-      x: ( (row-column)*(cellWidth/2) ) + offsetXToCenterIsoGrid,
-      y: ( (row+column)*(cellHeight/2) ) + offsetYToCenterIsoGrid
+      x: x + this.globalConfig.boardOffsetX,
+      y: ( (row+column)*(cellHeight/2) )
     }
     sprite.setCartisianScreenPosition(center.x, center.y);
   });
   this.buildingTileSpritesZIndex1.forEach((sprite: Sprite, key: number) => {
     let row = sprite.getIsoGridPosition().y;
     let column = sprite.getIsoGridPosition().x;    
+    let x = (row-column)*(cellWidth/2);
     let center = {
-      x: ( (row-column)*(cellWidth/2) ) + offsetXToCenterIsoGrid,
-      y: ( (row+column)*(cellHeight/2) ) - offsetYToCenterIsoGrid
+      x: x + this.globalConfig.boardOffsetX,
+      y: ( (row+column)*(cellHeight/2) )
     }
     sprite.setCartisianScreenPosition(center.x, center.y);
   });
 
   //what to do with player?
+
+  //let rowa = this.currentPlayerSprite.getIsoGridPosition().y;
+  //let columna = this.currentPlayerSprite.getIsoGridPosition().x;    
+  //let x = (rowa-columna)*(cellWidth/2);
+  //let center = {
+  //  x: x + this.globalConfig.boardOffsetX,
+  //  y: ( (rowa+columna)*(cellHeight/2) )
+  //}
+  //let playerPosition = this.currentPlayerSprite.getCartisianScreenPosition();
+  //let xz = playerPosition.x + this.globalConfig.boardCellWidthDifference;
+  //let yz = playerPosition.y + this.globalConfig.boardCellHeightDifference;
+  //this.currentPlayerSprite.setCartisianScreenPosition(xz, yz);
+
   //this.currentPlayerSprite.draw(this.ctx);
   //we dont have any enemeies yet
   //this.entityTileSpritesZIndex2.forEach((sprite: Sprite, key: number) => {
@@ -668,9 +674,10 @@ initializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
       //This doesnt affect y, since 1 always goes positive, just less positive now (half the height)
 
       //isoMetricNorthWestScreenCoords
+      let x = (row-column)*(cellWidth/2);
       let center = {
-        x: ( (row-column)*(cellWidth/2) ) + offsetXToCenterIsoGrid,
-        y: ( (row+column)*(cellHeight/2) ) - offsetYToCenterIsoGrid
+        x: x + this.globalConfig.boardOffsetX,
+        y: ( (row+column)*(cellHeight/2) )
       }
 
       //let westOfDiamond = {
@@ -763,7 +770,7 @@ initializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
       //let cartesianScreenCoordsX = ((column - row) * (cellWidth/2));
       //let cartesianScreenCoordsY = (column + row) * (cellHeight/2);
       let spriteType = this.levelData[column][row];  
-      this.addSpriteForRenderingAndAnimating(spriteType, center.x, center.y, row, column);
+      this.addSpriteForRenderingAndAnimating(spriteType, center.x, center.y, column, row);
     }
   }
 
@@ -792,16 +799,21 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
   clonedSprite.setCartisianScreenPosition(cartesianScreenCoordsX, cartesianScreenCoordsY);
   clonedSprite.setIsoGridPosition(isoColumnX,isoRowY);
   clonedSprite.setRenderMapLookupId(this.spriteMapLookupIdSequence);
+  let spriteId = isoColumnX.toString()+isoRowY.toString();
 
   if (clonedSprite.getZindex() === 0){
     if (clonedSprite.getSpriteType() === SpriteTypes.GROUND){
       this.groundTileSpritesZIndex0.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
+
+      this.allSprites.set(spriteId, clonedSprite);
     }
   }
 
   if (clonedSprite.getZindex() === 1){
     if (clonedSprite.getSpriteType() === SpriteTypes.BUILDING){
       this.buildingTileSpritesZIndex1.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
+
+      this.allSprites.set(spriteId, clonedSprite);
     }
   }
 
@@ -818,9 +830,13 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
         this.player.point2d.y = cartesianScreenCoordsY;
       }
       this.playerTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
+
+      this.allSprites.set(spriteId, clonedSprite);
     }
     else if (clonedSprite.getSpriteType() === SpriteTypes.ENEMY){
       this.entityTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
+
+      this.allSprites.set(spriteId, clonedSprite);
     }
   }
 
@@ -982,18 +998,16 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
   this.spriteTypesLookupMap.set(25, building25); 
 
 
-    //wall(Horizontal/Row?)
-    spritesheet = "assets/Medieval_Expansion_Trees_54.png";
-    let building26: Sprite = new Sprite(spritesheet, 355, 415,0,0,0,0, SpriteTypes.BUILDING);
-    building26.setZindex(1);
-    building26.setMapLookupId(26);
-    building26.setTileWidth(cellWidth);
-    building26.setTileHeight(cellHeight);
-    building26.setGlobalConfig(this.globalConfig);
-    this.spriteTypesLookupMap.set(26, building26); 
+  //wall(Horizontal/Row?)
+  spritesheet = "assets/Medieval_Expansion_Trees_54.png";
+  let building26: Sprite = new Sprite(spritesheet, 355, 415,0,0,0,0, SpriteTypes.BUILDING);
+  building26.setZindex(1);
+  building26.setMapLookupId(26);
+  building26.setTileWidth(cellWidth);
+  building26.setTileHeight(cellHeight);
+  building26.setGlobalConfig(this.globalConfig);
+  this.spriteTypesLookupMap.set(26, building26); 
 
-  
-  
 
 }
 
@@ -1068,10 +1082,10 @@ drawTimeAndFpsStats(timeStamp) {
   else {
     this.fpsCount++;
   }
-
+  c.globalAlpha = 0.7;
   c.fillStyle = "white";
-  c.fillRect(0, 0, 460, 220);
-
+  c.fillRect(0, 0, 460, 400);
+  c.globalAlpha = 1.0;
   c.fillStyle = "black";
 
   c.font = 'italic bold 12pt Hack';
@@ -1083,18 +1097,23 @@ drawTimeAndFpsStats(timeStamp) {
   c.fillText ("FPS: " + this.fps, 10, 40);
 
 
-  c.fillText ("Zoom Info: ", 10, 60);
-  c.fillText ("Level: " + this.globalConfig.zoomLevel, 10, 80);
-  c.fillText ("zoomPercent: " + this.globalConfig.zoomPercent, 10, 100); 
-  c.fillText ("boardCellWidth: " + this.globalConfig.boardCellWidth, 10, 120);  
-  c.fillText ("boardCellHeight: " + this.globalConfig.boardCellHeight, 10, 140); 
-
-  
+  c.fillText ("Zoom Info: ", 10, 80);
+  c.fillText ("Level: " + this.globalConfig.zoomLevel, 10, 100);
+  c.fillText ("zoomPercent: " + this.globalConfig.zoomPercent, 10, 120); 
 
 
   c.fillText ("Mouse Info: ", 10, 160);
   c.fillText ("xPosition: " + this.mouseCurrentPos.clientX, 10, 180);  
   c.fillText ("yPosition: " + this.mouseCurrentPos.clientY, 10, 200);  
+  c.fillText ("clickedCell: " + this.clickedCell.x+" : "+this.clickedCell.y, 10, 220);    
+
+  c.fillText ("Board Info: ", 10, 260);
+  c.fillText ("BoardPixelWidth: " + this.globalConfig.boardWidth, 10, 280);
+  c.fillText ("BoardPixelHeight: " + this.globalConfig.boardHeight, 10, 300);
+  c.fillText ("BoardCellsWide: " + this.globalConfig.boardCellsWide, 10, 320);
+  c.fillText ("BoardCellsHeigh: " + this.globalConfig.boardCellsHeigh, 10, 340);
+  c.fillText ("BoardCellsWidth: " + this.globalConfig.boardCellWidth, 10, 360);
+  c.fillText ("BoardCellHeight: " + this.globalConfig.boardCellHeight, 10, 380);
 
 }
 
@@ -1107,9 +1126,10 @@ drawTimeAndFpsStats(timeStamp) {
 drawDebugInfo() {
 
   let c = this.ctx;
-
+  c.globalAlpha = 0.7;
   c.fillStyle = "white";
   c.fillRect(1330, 0, 600, 160);
+  c.globalAlpha = 1.0;
 
   c.fillStyle = "black";
   c.font = 'italic bold 12pt Hack';

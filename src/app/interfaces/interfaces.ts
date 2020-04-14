@@ -85,4 +85,9 @@ export interface GlobalConfig{
   boardCenterCellNumberYOld: number;
   boardCellWidthInitial: number;
   boardCellHeightInitial: number;
+  boardHeight: number;
+  boardWidth: number;
+  boardOffsetX: number;
+  boardCellWidthDifference: number;
+  boardCellHeightDifference: number;
 }
