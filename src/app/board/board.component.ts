@@ -50,7 +50,9 @@ export class BoardComponent implements OnInit {
     boardWidth: 0,
     boardOffsetX: 0,
     boardCellWidthDifference: 0,
-    boardCellHeightDifference: 0
+    boardCellHeightDifference: 0,
+    boardCellWidthOld: 0,
+    boardCellHeightOld: 0
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -150,12 +152,10 @@ export class BoardComponent implements OnInit {
         //}
         this.globalConfig.zoomPercent += 0.1;
       }
-      let cellWidthOrig = this.globalConfig.boardCellWidth;
-      let cellHeightOrig = this.globalConfig.boardCellHeight;
+      this.globalConfig.boardCellWidthOld = this.globalConfig.boardCellWidth;
+      this.globalConfig.boardCellHeightOld = this.globalConfig.boardCellHeight;
       this.globalConfig.boardCellWidth = Math.round((this.globalConfig.boardCellWidthInitial) * this.globalConfig.zoomPercent);
-      this.globalConfig.boardCellHeight = Math.round((this.globalConfig.boardCellHeightInitial) * this.globalConfig.zoomPercent);
-      this.globalConfig.boardCellWidthDifference = cellWidthOrig - this.globalConfig.boardCellWidth;
-      this.globalConfig.boardCellHeightDifference = cellHeightOrig - this.globalConfig.boardCellHeight;      
+      this.globalConfig.boardCellHeight = Math.round((this.globalConfig.boardCellHeightInitial) * this.globalConfig.zoomPercent);   
       this.globalConfig.hasChanged = true;
       this.reconfigureBoardSettings();
       //this.updateCenter();
@@ -427,15 +427,11 @@ reconfigureBoardSettings() {
   this.globalConfig.boardCenterCellNumberX = (this.globalConfig.boardCellsWide/2);
   this.globalConfig.boardCenterCellNumberY = (this.globalConfig.boardCellsHeigh/2);
 
-
-  console.log("boardCellsWide: "+this.globalConfig.boardCellsWide);
-  console.log("boardCellsHeigh: "+this.globalConfig.boardCellsHeigh); 
-  console.log("boardCenterPointX: "+this.globalConfig.boardCenterPointX);
-  console.log("boardCenterPointY: "+this.globalConfig.boardCenterPointY);    
-  console.log("boardCenterCellNumberX: "+this.globalConfig.boardCenterCellNumberX);
-  console.log("boardCenterCellNumberY: "+this.globalConfig.boardCenterCellNumberY);  
   this.globalConfig.boardWidth = this.globalConfig.boardCellsWide * this.globalConfig.boardCellWidth;
   this.globalConfig.boardHeight = this.globalConfig.boardCellsHeigh * this.globalConfig.boardCellHeight;  
+
+  this.globalConfig.boardCellWidthDifference = this.globalConfig.boardCellWidthOld - this.globalConfig.boardCellWidth;
+  this.globalConfig.boardCellHeightDifference = this.globalConfig.boardCellHeightOld - this.globalConfig.boardCellHeight;  
 
   this.globalConfig.boardOffsetX = (this.globalConfig.canvasWidth/2 - (this.globalConfig.boardCellWidth/2));
 }  
@@ -493,12 +489,6 @@ reconfigureBoardSettings() {
   this.globalConfig.boardCenterCellNumberY = (this.globalConfig.boardCellsHeigh/2);
 
 
-  console.log("boardCellsWide: "+this.globalConfig.boardCellsWide);
-  console.log("boardCellsHeigh: "+this.globalConfig.boardCellsHeigh); 
-  console.log("boardCenterPointX: "+this.globalConfig.boardCenterPointX);
-  console.log("boardCenterPointY: "+this.globalConfig.boardCenterPointY);    
-  console.log("boardCenterCellNumberX: "+this.globalConfig.boardCenterCellNumberX);
-  console.log("boardCenterCellNumberY: "+this.globalConfig.boardCenterCellNumberY);  
 
   this.globalConfig.boardCellWidthInitial =this.globalConfig.boardCellWidth;
   this.globalConfig.boardCellHeightInitial =this.globalConfig.boardCellHeight;
@@ -526,6 +516,7 @@ reinitializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
   //corner of a normal square would be, to the right
   let cellWidth = this.globalConfig.boardCellWidth;
   let cellHeight = this.globalConfig.boardCellHeight;
+  this.globalConfig.boardWidth;
 
   this.groundTileSpritesZIndex0.forEach((sprite: Sprite, key: number) => {
     let row = sprite.getIsoGridPosition().y;
@@ -666,6 +657,8 @@ initializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
   let offsetXToCenterIsoGrid = Math.abs( (this.globalConfig.boardCenterPointX)-Math.abs(centerCell.x) );
   let offsetYToCenterIsoGrid = Math.abs( (this.globalConfig.boardCenterPointY)-Math.abs(centerCell.y) );
 
+  //THIS IS WAY BETTER WAY TO DO THIS:
+  //https://www.careinshop.com/hot-sale-products?gclid=EAIaIQobChMIn5aYiN7p6AIVjSlpCh0smgwJEAEYASAAEgIp6fD_BwE
   for (let column: number = 0; column < myColumns; column++){
     for (let row: number = 0; row < myRows; row++){
       //Topp Left point of the square that this diamond is in
@@ -1056,6 +1049,12 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
     femaleWalkingLeft.setIsStatic(false);
     femaleWalkingRight.setIsStatic(false);
     femaleWalkingUp.setIsStatic(false);  
+
+    femaleWalkingDown.isPlayer = true;
+    femaleWalkingLeft.isPlayer = true;
+    femaleWalkingRight.isPlayer = true;
+    femaleWalkingUp.isPlayer = true;
+    
     
 
     this.spriteTypesLookupMap.set(0, femaleWalkingDown);
@@ -1063,6 +1062,21 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
     this.spriteTypesLookupMap.set(2, femaleWalkingRight);
     this.spriteTypesLookupMap.set(3, femaleWalkingUp);
 
+}
+
+
+isoTo2D(pt:Point2d):Point2d{
+  var tempPt:Point2d = {x: 0, y: 0};
+  tempPt.x = (2 * pt.y + pt.x) / 2;
+  tempPt.y = (2 * pt.y - pt.x) / 2;
+  return tempPt;
+}
+
+ twoDToIso(pt:Point2d):Point2d{
+  var tempPt:Point2d = {x: 0, y: 0};
+  tempPt.x = pt.x - pt.y;
+  tempPt.y = (pt.x + pt.y) / 2;
+  return tempPt;
 }
 
 
@@ -1084,7 +1098,7 @@ drawTimeAndFpsStats(timeStamp) {
   }
   c.globalAlpha = 0.7;
   c.fillStyle = "white";
-  c.fillRect(0, 0, 460, 400);
+  c.fillRect(0, 0, 460, 520);
   c.globalAlpha = 1.0;
   c.fillStyle = "black";
 
@@ -1108,12 +1122,19 @@ drawTimeAndFpsStats(timeStamp) {
   c.fillText ("clickedCell: " + this.clickedCell.x+" : "+this.clickedCell.y, 10, 220);    
 
   c.fillText ("Board Info: ", 10, 260);
-  c.fillText ("BoardPixelWidth: " + this.globalConfig.boardWidth, 10, 280);
-  c.fillText ("BoardPixelHeight: " + this.globalConfig.boardHeight, 10, 300);
+  c.fillText ("BoardWidth: " + this.globalConfig.boardWidth, 10, 280);
+  c.fillText ("BoardHeight: " + this.globalConfig.boardHeight, 10, 300);
   c.fillText ("BoardCellsWide: " + this.globalConfig.boardCellsWide, 10, 320);
   c.fillText ("BoardCellsHeigh: " + this.globalConfig.boardCellsHeigh, 10, 340);
-  c.fillText ("BoardCellsWidth: " + this.globalConfig.boardCellWidth, 10, 360);
+  c.fillText ("BoardCellWidth: " + this.globalConfig.boardCellWidth, 10, 360);
   c.fillText ("BoardCellHeight: " + this.globalConfig.boardCellHeight, 10, 380);
+  c.fillText ("boardCellWidthDifference: " + this.globalConfig.boardCellWidthDifference, 10, 400);
+  c.fillText ("boardCellHeightDifference: " + this.globalConfig.boardCellHeightDifference, 10, 420);
+
+
+  c.fillText ("Player Info: ", 10, 460);
+  c.fillText ("XPos: " + this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 480);
+  c.fillText ("YPos: " + this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 500);  
 
 }
 

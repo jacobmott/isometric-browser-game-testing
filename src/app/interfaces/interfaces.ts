@@ -88,6 +88,8 @@ export interface GlobalConfig{
   boardHeight: number;
   boardWidth: number;
   boardOffsetX: number;
-  boardCellWidthDifference: number;
-  boardCellHeightDifference: number;
+  boardCellWidthDifference: number,
+  boardCellHeightDifference: number,
+  boardCellWidthOld: number,
+  boardCellHeightOld: number
 }

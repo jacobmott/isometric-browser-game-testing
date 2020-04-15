@@ -25,6 +25,7 @@ export class Sprite {
     debug: boolean = true;
     toggleZindex: boolean = true;
     isClicked: boolean = false;
+    isPlayer: boolean = false;
 
     renderMapLookupId: number;
     isoColumnX: number = 0;
@@ -72,6 +73,7 @@ export class Sprite {
       sprite.setCartisianScreenPosition(this.getCartisianScreenPosition().x, this.getCartisianScreenPosition().y);
       sprite.setIsoGridPosition(this.getIsoGridPosition().x, this.getIsoGridPosition().y);
       sprite.setMapLookupId(this.mapLookupId);
+      sprite.isPlayer = this.isPlayer;
       return sprite;
     }
 
@@ -283,7 +285,7 @@ export class Sprite {
                       this.globalConfig.boardCellWidth,
                       this.globalConfig.boardCellHeight);
         }
-        if (this.isClicked){
+        if (this.isClicked || this.isPlayer){
           c.globalAlpha = 0.3;
           c.fillStyle = "yellow";
           c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.boardCellWidth, this.globalConfig.boardCellHeight);
