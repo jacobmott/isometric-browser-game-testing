@@ -91,5 +91,6 @@ export interface GlobalConfig{
   boardCellWidthDifference: number,
   boardCellHeightDifference: number,
   boardCellWidthOld: number,
-  boardCellHeightOld: number
+  boardCellHeightOld: number,
+  boardCellWidthToHeightRatio: number
 }

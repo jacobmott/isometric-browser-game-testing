@@ -52,7 +52,8 @@ export class BoardComponent implements OnInit {
     boardCellWidthDifference: 0,
     boardCellHeightDifference: 0,
     boardCellWidthOld: 0,
-    boardCellHeightOld: 0
+    boardCellHeightOld: 0,
+    boardCellWidthToHeightRatio: 0
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -110,13 +111,14 @@ export class BoardComponent implements OnInit {
      this.mouseCurrentPos.clientY /=  bounds.height; 
   
      // then scale to canvas coordinates by multiplying the normalized coords with the canvas resolution
-  
      this.mouseCurrentPos.clientX *= this.ctx.canvas.width;
      this.mouseCurrentPos.clientY *= this.ctx.canvas.height;
      this.clickedCell = this.whatCellWasClicked();
-     let spriteId = this.clickedCell.x.toString()+this.clickedCell.y.toString();
+
+     let spriteId = this.clickedCell.x.toString()+":"+this.clickedCell.y.toString();
      let sprite = this.allSprites.get(spriteId);
-     sprite.setIsClicked(true);
+     console.log(JSON.stringify(this.allSprites));
+     sprite.toggleIsClicked();
     }
 
   @HostListener('wheel', ['$event']) 
@@ -136,7 +138,6 @@ export class BoardComponent implements OnInit {
      this.mouseCurrentPos.clientY *= this.ctx.canvas.height;
       if(event.deltaY>0){
         this.globalConfig.zoomLevel -= 1;
-        //this.globalConfig.zoomFactor = 1 - this.globalConfig.zoomPercent;
         if (this.globalConfig.zoomLevel < -8){ 
           this.globalConfig.zoomLevel = -8;
           return;
@@ -145,11 +146,6 @@ export class BoardComponent implements OnInit {
       }
       if(event.deltaY<0){
         this.globalConfig.zoomLevel += 1;
-        //.globalConfig.zoomFactor = 1 + this.globalConfig.zoomPercent;
-        //if (this.globalConfig.zoomLevel > 60){ 
-        //  this.globalConfig.zoomLevel = 60;
-        //  return;
-        //}
         this.globalConfig.zoomPercent += 0.1;
       }
       this.globalConfig.boardCellWidthOld = this.globalConfig.boardCellWidth;
@@ -158,7 +154,6 @@ export class BoardComponent implements OnInit {
       this.globalConfig.boardCellHeight = Math.round((this.globalConfig.boardCellHeightInitial) * this.globalConfig.zoomPercent);   
       this.globalConfig.hasChanged = true;
       this.reconfigureBoardSettings();
-      //this.updateCenter();
       this.reinitializeSpritesPositionAndZindexRenderMapFromBoardLevelData();      
   }
 
@@ -213,9 +208,9 @@ export class BoardComponent implements OnInit {
 
     ////Add the sprites that are in the levelmap data to the render queues at the right positions
     this.addPlayerToBoard();
-    this.addSpriteForRenderingAndAnimating(1, 0, 0,0,0);
-    this.addSpriteForRenderingAndAnimating(2, 0, 0,0,0);
-    this.addSpriteForRenderingAndAnimating(3, 0, 0,0,0);
+    this.placetile(1, {x: 0, y: 0},0,0);
+    this.placetile(2, {x: 0, y: 0},0,0);
+    this.placetile(3, {x: 0, y: 0},0,0);
 
     this.initializeSpritesPositionAndZindexRenderMapFromBoardLevelData();
     this.gameLoop();
@@ -227,7 +222,7 @@ export class BoardComponent implements OnInit {
 //
 //########################################################################################################
 addPlayerToBoard() {
-  this.addSpriteForRenderingAndAnimating(0, 200, 200, 0, 0);
+  this.placetile(0, {x: 200, y: 200}, 0, 0);
 }
 
 
@@ -239,18 +234,15 @@ createLevelData() {
 
   //20 to 25 buildings
 
-  let myColumns = this.globalConfig.boardCellsWide;
   let myRows = this.globalConfig.boardCellsHeigh;
+  let myColumns = this.globalConfig.boardCellsWide;
   this.levelData = [];
-  for (let column: number = 0; column < myColumns; column++){
-    this.levelData[column] = [];
-    for (let row: number = 0; row < myRows; row++){
-      this.levelData[column][row] = this.getRandomLevelData();
+  for (let row: number = 0; row < myRows; row++){
+    this.levelData[row] = [];
+    for (let column: number = 0; column < myColumns; column++){
+      this.levelData[row][column] = this.getRandomLevelData();
     }
   }
-
-  //lets set something special in the center cell so we can tell which one it is
-  //this.levelData[this.globalConfig.boardCenterCellNumberX][this.globalConfig.boardCenterCellNumberY] = 26;
 
 }
 
@@ -269,8 +261,8 @@ getRandomLevelData() {
   let type: number = 13;
 
   if (setToChooseFrom === SpriteTypes.GROUND){
-    //20 to 25 buildings
-    type = Utils.getRandomArbitrary(20, 25);
+    //20 to 26 buildings
+    type = Utils.getRandomArbitrary(20, 26);
   }
   else if (setToChooseFrom === SpriteTypes.BUILDING){
     //10 to 14 ground
@@ -347,6 +339,13 @@ getRandomLevelData() {
   }
 
 
+  getTileCoordinates(pt:Point2d): Point2d{
+    let tempPt: Point2d = {x: 0, y: 0};
+    tempPt.x = Math.floor(pt.x / this.globalConfig.boardCellWidth);
+    tempPt.y = Math.floor(pt.y / this.globalConfig.boardCellHeight);
+    return tempPt;
+  }
+
 //########################################################################################################
 // whatCellWasClicked
 // https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
@@ -402,6 +401,9 @@ reconfigureBoardSettings() {
   //We only want the quotient for this wide/heigh measurment
   this.globalConfig.boardCellsWide = Math.floor(this.globalConfig.canvasWidth/this.globalConfig.boardCellWidth); 
   this.globalConfig.boardCellsHeigh = Math.floor(this.globalConfig.canvasHeight/this.globalConfig.boardCellHeight);
+  
+  //This should actually remain the same (currnetly locked to 2 to 1 (2:1))
+  this.globalConfig.boardCellWidthToHeightRatio = Math.trunc(this.globalConfig.boardCellWidth / this.globalConfig.boardCellHeight);
   //Lets double the cells to make is larger, since when we convert these cells to isometric and display them they are much smaller
   //Also, lets make sure the wide and heigh is always even, that lets us get a "center" position of the grid easily (just divide wide and height by 2
   //and we get another nice even number
@@ -458,6 +460,7 @@ reconfigureBoardSettings() {
 
   this.globalConfig.boardCellWidth = 200;
   this.globalConfig.boardCellHeight = 100;
+  this.globalConfig.boardCellWidthToHeightRatio = Math.trunc(this.globalConfig.boardCellWidth / this.globalConfig.boardCellHeight);
 
   //We only want the quotient for this wide/heigh measurment
   this.globalConfig.boardCellsWide = Math.floor(this.globalConfig.canvasWidth/this.globalConfig.boardCellWidth); //9
@@ -500,12 +503,76 @@ reconfigureBoardSettings() {
 
 
 //########################################################################################################
+// isoTo2D
+//
+//########################################################################################################
+isoTo2D(pt:Point2d):Point2d{
+  var tempPt:Point2d = {x: 0, y: 0};
+  tempPt.x = (2 * pt.y + pt.x) / 2;
+  tempPt.y = (2 * pt.y - pt.x) / 2;
+  //we have a 2 to 1 ratio cell size, so we have to scale
+  //Otherwise we'd just do this above if we had a 1 to 1 ratio, width to height cell size (1:1)  
+  tempPt.x = tempPt.x * this.globalConfig.boardCellWidthToHeightRatio;
+  return tempPt;
+}
+
+
+//########################################################################################################
+// twoDToIso
+//
+//########################################################################################################
+ twoDToIso(pt:Point2d):Point2d{
+  var tempPt:Point2d = {x: 0, y: 0};
+  //we have a 2 to 1 ratio cell size, so we have to scale
+  pt.x = pt.x / this.globalConfig.boardCellWidthToHeightRatio;
+  //Otherwise we'd just do this below if we had a 1 to 1 ratio, width to height cell size (1:1)
+  tempPt.x = pt.x - pt.y;
+  tempPt.y = (pt.x + pt.y) / 2;
+  return tempPt;
+}
+
+//########################################################################################################
+// initializeSpritesPositionAndZindexRenderMapFromBoardLevelData
+//
+//########################################################################################################
+initializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
+
+  let myRows = this.globalConfig.boardCellsHeigh;
+  let myColumns = this.globalConfig.boardCellsWide;
+
+
+  //for (i, loop through rows)
+  //for (j, loop through columns)
+  // x = j * tile width
+  // y = i * tile height
+  // tileType = levelData[i][j]
+  // placetile(tileType, x, y)
+
+  for (let row: number = 0; row < myRows; row++){
+
+    for (let column: number = 0; column < myColumns; column++){
+      let x = column * this.globalConfig.boardCellWidth;
+      let y = row * this.globalConfig.boardCellHeight;
+      let spriteType = this.levelData[row][column]
+      let isoScreenCoord: Point2d = this.twoDToIso({x: x, y: y}) ;
+      //let reverseBackToXandY: Point2d = this.isoTo2D(isoScreenCoord);
+      isoScreenCoord.x = isoScreenCoord.x + this.globalConfig.boardOffsetX;
+      this.placetile(spriteType, isoScreenCoord, row, column);
+    }
+
+  }
+
+
+
+}
+
+
+
+//########################################################################################################
 // reinitializeSpritesPositionAndZindexRenderMapFromBoardLevelData
 //
 //########################################################################################################
 reinitializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
-
-  let c = this.ctx;
 
   //lets draw a isometric tile at position 0,0
   //now, give this an isometric perspective is pretty easy, we essentially tilt the square.
@@ -516,41 +583,35 @@ reinitializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
   //corner of a normal square would be, to the right
   let cellWidth = this.globalConfig.boardCellWidth;
   let cellHeight = this.globalConfig.boardCellHeight;
-  this.globalConfig.boardWidth;
 
   this.groundTileSpritesZIndex0.forEach((sprite: Sprite, key: number) => {
     let row = sprite.getIsoGridPosition().y;
-    let column = sprite.getIsoGridPosition().x;
-    let x = (row-column)*(cellWidth/2);
-    let center = {
-      x: x + this.globalConfig.boardOffsetX,
-      y: ( (row+column)*(cellHeight/2) )
-    }
-    sprite.setCartisianScreenPosition(center.x, center.y);
+    let column = sprite.getIsoGridPosition().x;    
+    let x = column * this.globalConfig.boardCellWidth;
+    let y = row * this.globalConfig.boardCellHeight;
+    let isoScreenCoord: Point2d = this.twoDToIso({x: x, y: y}) ;
+    isoScreenCoord.x = isoScreenCoord.x + this.globalConfig.boardOffsetX;
+    sprite.setCartisianScreenPosition(isoScreenCoord.x, isoScreenCoord.y);
   });
   this.buildingTileSpritesZIndex1.forEach((sprite: Sprite, key: number) => {
     let row = sprite.getIsoGridPosition().y;
     let column = sprite.getIsoGridPosition().x;    
-    let x = (row-column)*(cellWidth/2);
-    let center = {
-      x: x + this.globalConfig.boardOffsetX,
-      y: ( (row+column)*(cellHeight/2) )
-    }
-    sprite.setCartisianScreenPosition(center.x, center.y);
+    let x = column * this.globalConfig.boardCellWidth;
+    let y = row * this.globalConfig.boardCellHeight;
+    let isoScreenCoord: Point2d = this.twoDToIso({x: x, y: y}) ;
+    isoScreenCoord.x = isoScreenCoord.x + this.globalConfig.boardOffsetX;
+    sprite.setCartisianScreenPosition(isoScreenCoord.x, isoScreenCoord.y);
   });
 
   //what to do with player?
 
-  //let rowa = this.currentPlayerSprite.getIsoGridPosition().y;
-  //let columna = this.currentPlayerSprite.getIsoGridPosition().x;    
-  //let x = (rowa-columna)*(cellWidth/2);
-  //let center = {
-  //  x: x + this.globalConfig.boardOffsetX,
-  //  y: ( (rowa+columna)*(cellHeight/2) )
-  //}
-  //let playerPosition = this.currentPlayerSprite.getCartisianScreenPosition();
-  //let xz = playerPosition.x + this.globalConfig.boardCellWidthDifference;
-  //let yz = playerPosition.y + this.globalConfig.boardCellHeightDifference;
+  //let row = this.currentPlayerSprite.getIsoGridPosition().y;
+  //let column = this.currentPlayerSprite.getIsoGridPosition().x;    
+  //let x = column * this.globalConfig.boardCellWidth;
+  //let y = row * this.globalConfig.boardCellHeight;
+  //let isoScreenCoord: Point2d = this.twoDToIso({x: x, y: y}) ;
+  //isoScreenCoord.x = isoScreenCoord.x + this.globalConfig.boardOffsetX;
+  //this.currentPlayerSprite.setCartisianScreenPosition(isoScreenCoord.x, isoScreenCoord.y);
   //this.currentPlayerSprite.setCartisianScreenPosition(xz, yz);
 
   //this.currentPlayerSprite.draw(this.ctx);
@@ -569,230 +630,22 @@ reinitializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
 }
 
 //########################################################################################################
-// initializeSpritesPositionAndZindexRenderMapFromBoardLevelData
+// placetile
 //
 //########################################################################################################
-initializeSpritesPositionAndZindexRenderMapFromBoardLevelData() {
-
-  let c = this.ctx;
-
-
-  //lets draw a isometric tile at position 0,0
-  //now, give this an isometric perspective is pretty easy, we essentially tilt the square.
-  //a sort of simplified way to do this is as follows - 
-  //It means that we essentially draw a diamond instead of a square, and then halve the height
-  //and double the width.
-  //the first point, (the top of the diamond) is 1/2 the width of the square from where the top left
-  //corner of a normal square would be, to the right
-  let cellWidth = this.globalConfig.boardCellWidth;
-  let cellHeight = this.globalConfig.boardCellHeight;
-  
-
-  //page 48 in the game book, Making Isometric Social Real-Time Games with HTML5, CSS3, and JavaScript
-  //As you can see, an isometric tile is nothing more than a rectangle that is twice as wide as it is tall.
-  //Making Isometric Social Real-Time Games with HTML5, CSS3, and JavaScript: Rendering Simple 3D Worlds with Sprites and Maps (p. 48). O'Reilly Media. Kindle Edition. 
-  //The diamond inside of it, usually just an image or a vector representation, 
-  //is defined by the coordinates: 
-  //West 
-    //X: 0 
-    //Y: tile.height/2 
-  //East 
-    //X: tile.width 
-    //Y: tile.height/2 
-  //North 
-    //X: tile.width/2 
-    //Y: 0 
-  //South 
-    //X: tile.width/2 
-    //Y: tile.height 
-  //This means that if we want to display two tiles: We first need to position the first tile.
-  //The second tile should be positioned in the first tile’s width divided by 2, plus the first tile’s height divided by 2.
-
-  //Lets define the starting/first tile/diamond (iso view)
-  let westOfDiamond = {
-    x: 0, 
-    y: cellHeight/2 
-  }
-  let eastOfDiamond = {
-    x: cellWidth,
-    y: cellHeight/2 
-  }
-  let northOfDiamond = {
-    x: cellWidth/2, 
-    y: 0
-  };
-  let southOfDiamond = {
-    x: cellWidth/2,
-    y: cellHeight 
-  };
-
-  //These are screen coordinates, in the center of the isometric diamon, but they are in isoMetric format/measurments
-  //Meaning these are the screen coordinates in the center of the isometric diamond,
-  //which for the first isometric diamond its knowable
-  let firstDiamondsIsoMetricCenterScreenCoords = {
-    x: cellWidth/2,
-    y: cellHeight/2
-  };
-  let firstDiamondsIsoMetricNorthWestScreenCoords = {
-    x: 0,
-    y: 0
-  };
-
-  let myColumns = this.globalConfig.boardCellsWide;
-  let myRows = this.globalConfig.boardCellsHeigh;
-
-
-  //lets figure out what the offsets need to be to center our board
-  let column = this.globalConfig.boardCenterCellNumberX;
-  let row = this.globalConfig.boardCenterCellNumberY;
-  //These are our isommetric (diemetric technically) coordinates in screen coords,
-  //meaning.. we have the isometric coords, but we havve maped them to screen coords
-  //This here is telling us where the center of our isometric grid of tiles should be in screen coords/space
-  //so we should just be able to offset every tile by this much to "center" our grid
-  let centerCell = {
-    x: (row-column)*(cellWidth/2),
-    y: (row+column)*(cellHeight/2)
-  };
-  
-  let offsetXToCenterIsoGrid = Math.abs( (this.globalConfig.boardCenterPointX)-Math.abs(centerCell.x) );
-  let offsetYToCenterIsoGrid = Math.abs( (this.globalConfig.boardCenterPointY)-Math.abs(centerCell.y) );
-
-  //THIS IS WAY BETTER WAY TO DO THIS:
-  //https://www.careinshop.com/hot-sale-products?gclid=EAIaIQobChMIn5aYiN7p6AIVjSlpCh0smgwJEAEYASAAEgIp6fD_BwE
-  for (let column: number = 0; column < myColumns; column++){
-    for (let row: number = 0; row < myRows; row++){
-      //Topp Left point of the square that this diamond is in
-      //For the x position, we actually minus and go negative, since the isometric projection tilts on the
-      //z axis 40 degrees, this pushes all x values into the negative direction(or to the left)
-      //This doesnt affect y, since 1 always goes positive, just less positive now (half the height)
-
-      //isoMetricNorthWestScreenCoords
-      let x = (row-column)*(cellWidth/2);
-      let center = {
-        x: x + this.globalConfig.boardOffsetX,
-        y: ( (row+column)*(cellHeight/2) )
-      }
-
-      //let westOfDiamond = {
-      //  x: center.x-(cellWidth/2), 
-      //  y: center.y 
-      //}
-      //let eastOfDiamond = {
-      //  x: center.x+(cellWidth/2), 
-      //  y: center.y
-      //}
-      //let northOfDiamond = {
-      //  x: center.x, 
-      //  y: center.y-(cellHeight/2)
-      //};
-      //let southOfDiamond = {
-      //  x: center.x, 
-      //  y: center.y+(cellHeight/2)
-      //};
-//
-//
-      //c.font = 'italic bold 5pt Courier';
-      //c.fillText (column+" : "+row, center.x, center.y);
-      //c.lineWidth = 4;
-      //c.strokeStyle = '#203b8c';
-      //c.beginPath();
-      //c.moveTo(northOfDiamond.x, northOfDiamond.y);
-      //c.lineTo(eastOfDiamond.x, eastOfDiamond.y);  
-      //c.stroke(); 
-    //
-      //c.beginPath();
-      //c.moveTo(eastOfDiamond.x, eastOfDiamond.y);
-      //c.lineTo(southOfDiamond.x, southOfDiamond.y);  
-      //c.stroke();   
-    //
-      //c.beginPath();
-      //c.moveTo(southOfDiamond.x, southOfDiamond.y);
-      //c.lineTo(westOfDiamond.x, westOfDiamond.y);  
-      //c.stroke();  
-      //
-      //c.beginPath();
-      //c.moveTo(westOfDiamond.x, westOfDiamond.y);
-      //c.lineTo(northOfDiamond.x, northOfDiamond.y);  
-      //c.stroke(); 
-//
-//
-//
-//
-      //if (column === this.globalConfig.boardCenterCellNumberX && row === this.globalConfig.boardCenterCellNumberY){
-//
-      //  let topLeftofSquare = {
-      //    x: center.x-(cellWidth/2), 
-      //    y: center.y-(cellHeight/2)
-      //  }
-      //  let topRightofSquare = {
-      //    x: center.x+(cellWidth/2), 
-      //    y: center.y-(cellHeight/2)
-      //  }
-      //  let bottomRightofSquare = {
-      //    x: center.x+(cellWidth/2), 
-      //    y: center.y+(cellHeight/2)
-      //  };
-      //  let bottomLeftofSquare = {
-      //    x: center.x-(cellWidth/2), 
-      //    y: center.y+(cellHeight/2)
-      //  };
-//
-      //c.strokeStyle = "#801378";
-      //c.beginPath();
-      //c.moveTo(topLeftofSquare.x, topLeftofSquare.y);
-      //c.lineTo(topRightofSquare.x, topRightofSquare.y);  
-      //c.stroke(); 
-    //
-      //c.beginPath();
-      //c.moveTo(topRightofSquare.x, topRightofSquare.y);
-      //c.lineTo(bottomRightofSquare.x, bottomRightofSquare.y);  
-      //c.stroke();   
-    //
-      //c.beginPath();
-      //c.moveTo(bottomRightofSquare.x, bottomRightofSquare.y);
-      //c.lineTo(bottomLeftofSquare.x, bottomLeftofSquare.y);  
-      //c.stroke();  
-      //
-      //c.beginPath();
-      //c.moveTo(bottomLeftofSquare.x, bottomLeftofSquare.y);
-      //c.lineTo(topLeftofSquare.x, topLeftofSquare.y);  
-      //c.stroke();       
-
-    //}
-      //We need to convert from ISO coords TO x/y plane (cartesian) coords
-      //let cartesianScreenCoordsX = ((column - row) * (cellWidth/2));
-      //let cartesianScreenCoordsY = (column + row) * (cellHeight/2);
-      let spriteType = this.levelData[column][row];  
-      this.addSpriteForRenderingAndAnimating(spriteType, center.x, center.y, column, row);
-    }
-  }
-
-
-  //c.beginPath();
-  //c.arc(this.globalConfig.boardCenterPointX, this.globalConfig.boardCenterPointY, 10, 0, 2 * Math.PI, false);
-  //c.fillStyle = 'blue';
-  //c.fill();
-  //c.lineWidth = 5;
-  //c.strokeStyle = '#003300';
-  //c.stroke();
-
-}
-
-//########################################################################################################
-// addSpriteForRenderingAndAnimating
-//
-//########################################################################################################
-addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: number, cartesianScreenCoordsY: number, isoRowY: number, isoColumnX: number) {
+placetile(spriteType: number, isoScreenCoord: Point2d, isoRowY: number, isoColumnX: number) {
   this.spriteMapLookupIdSequence += 1;
 
+  let x = isoScreenCoord.x;
+  let y = isoScreenCoord.y;
   //Clone the tile so we have a copy, all objects are passed by reference in typescript
   let sprite: Sprite = this.spriteTypesLookupMap.get(spriteType);
   let clonedSprite: Sprite = sprite.deepClone();
   //column is our x, row is our y
-  clonedSprite.setCartisianScreenPosition(cartesianScreenCoordsX, cartesianScreenCoordsY);
+  clonedSprite.setCartisianScreenPosition(x, y);
   clonedSprite.setIsoGridPosition(isoColumnX,isoRowY);
   clonedSprite.setRenderMapLookupId(this.spriteMapLookupIdSequence);
-  let spriteId = isoColumnX.toString()+isoRowY.toString();
+  let spriteId = isoColumnX.toString()+":"+isoRowY.toString();
 
   if (clonedSprite.getZindex() === 0){
     if (clonedSprite.getSpriteType() === SpriteTypes.GROUND){
@@ -819,8 +672,8 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
         clonedSprite.setIsoGridPosition(startingPlayerSprite.getIsoGridPosition().x,startingPlayerSprite.getIsoGridPosition().y);
       }
       else{
-        this.player.point2d.x = cartesianScreenCoordsX;
-        this.player.point2d.y = cartesianScreenCoordsY;
+        this.player.point2d.x = x;
+        this.player.point2d.y = y;
       }
       this.playerTileSpritesZIndex2.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
 
@@ -1065,20 +918,6 @@ addSpriteForRenderingAndAnimating(spriteType: number, cartesianScreenCoordsX: nu
 }
 
 
-isoTo2D(pt:Point2d):Point2d{
-  var tempPt:Point2d = {x: 0, y: 0};
-  tempPt.x = (2 * pt.y + pt.x) / 2;
-  tempPt.y = (2 * pt.y - pt.x) / 2;
-  return tempPt;
-}
-
- twoDToIso(pt:Point2d):Point2d{
-  var tempPt:Point2d = {x: 0, y: 0};
-  tempPt.x = pt.x - pt.y;
-  tempPt.y = (pt.x + pt.y) / 2;
-  return tempPt;
-}
-
 
 //########################################################################################################
 // drawTimeAndFpsStats
@@ -1098,7 +937,7 @@ drawTimeAndFpsStats(timeStamp) {
   }
   c.globalAlpha = 0.7;
   c.fillStyle = "white";
-  c.fillRect(0, 0, 460, 520);
+  c.fillRect(0, 0, 460, 540);
   c.globalAlpha = 1.0;
   c.fillStyle = "black";
 
@@ -1130,11 +969,13 @@ drawTimeAndFpsStats(timeStamp) {
   c.fillText ("BoardCellHeight: " + this.globalConfig.boardCellHeight, 10, 380);
   c.fillText ("boardCellWidthDifference: " + this.globalConfig.boardCellWidthDifference, 10, 400);
   c.fillText ("boardCellHeightDifference: " + this.globalConfig.boardCellHeightDifference, 10, 420);
+  c.fillText ("boardCellWidthToHeightRatio: " + this.globalConfig.boardCellWidthToHeightRatio, 10, 440);
+  
 
 
-  c.fillText ("Player Info: ", 10, 460);
-  c.fillText ("XPos: " + this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 480);
-  c.fillText ("YPos: " + this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 500);  
+  c.fillText ("Player Info: ", 10, 480);
+  c.fillText ("XPos: " + this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 500);
+  c.fillText ("YPos: " + this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 520);  
 
 }
 

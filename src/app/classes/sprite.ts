@@ -89,8 +89,8 @@ export class Sprite {
       return this.mapLookupId;
     }
 
-    setIsClicked(isClicked: boolean) {
-      this.isClicked = isClicked;
+    toggleIsClicked() {
+      this.isClicked = !this.isClicked;
     }
     
 
