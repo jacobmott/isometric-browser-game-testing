@@ -990,7 +990,7 @@ drawDebugInfo() {
   let c = this.ctx;
   c.globalAlpha = 0.7;
   c.fillStyle = "white";
-  c.fillRect(1330, 0, 600, 160);
+  c.fillRect(1330, 0, 600, 200);
   c.globalAlpha = 1.0;
 
   c.fillStyle = "black";
@@ -998,15 +998,13 @@ drawDebugInfo() {
   c.fillText ("CONTROLS: ", 1330, 20);
   c.fillText ("W,A,S,D to move: ", 1330, 40);
   c.fillText ("Scroll up and down on mouse scrollwheel to zoom in/out ", 1330, 60);  
-  c.fillText ("Tap 0(zero) to toggle debug info on the map on/off: ", 1330, 80);  
+  c.fillText ("Tap 0(zero) to toggle debug info on the map on/off", 1330, 80);  
+  c.fillText ("LeftClick on the map to select a cell and unselect a cell", 1330, 100);  
 
-  c.fillText ("LEGEND: ", 1330, 100);
-  c.fillText ("Ct: Cartesian(Screen) coordinates (X/Y)", 1330, 120);
-  c.fillText ("Is: Isometric Tile/Grid coordinates (Column(X)/Row(Y))", 1330, 140);  
+  c.fillText ("LEGEND: ", 1330, 140);
+  c.fillText ("Ct: Cartesian(Screen) coordinates (X/Y)", 1330, 160);
+  c.fillText ("Is: Isometric Tile/Grid coordinates (Column(X)/Row(Y))", 1330, 180);  
   
- // this.ctx.fillText ("CURRENT PLAYER LOCATION INFO: ", 1300, 234);
- // this.ctx.fillText ("Ct: x: "+this.currentPlayerSprite.getCartisianScreenPosition().x, 1300, 248);  
- // this.ctx.fillText ("Ct: y: "+this.currentPlayerSprite.getCartisianScreenPosition().y, 1300, 262);  
   
 }
  
