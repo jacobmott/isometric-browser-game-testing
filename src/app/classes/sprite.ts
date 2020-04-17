@@ -258,16 +258,23 @@ export class Sprite {
     
     draw(c) {
       if (this.shown) {
+        let destinationWidth = this.globalConfig.boardCellWidth;
+        let destinationheight = this.globalConfig.boardCellHeight;
+        if(this.isPlayer){
+          destinationWidth = 90 / (this.globalConfig.boardCellWidthInitial/this.globalConfig.boardCellWidth);
+          destinationheight = 45 / (this.globalConfig.boardCellHeightInitial/this.globalConfig.boardCellHeight);
+        }
+
         if (this.globalConfig.debug){
           c.beginPath();
           c.lineWidth = 1;
           c.strokeStyle = this.globalConfig.alternateDebugGridLine%2 === 0 ? "blue" : "red";
           ++this.globalConfig.alternateDebugGridLine;
-          c.rect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.boardCellWidth, this.globalConfig.boardCellHeight);
+          c.rect(this.cartisianScreenPosX, this.cartisianScreenPosY, destinationWidth, destinationheight);
           c.stroke();
           c.font = 'italic bold 10pt Courier';
           c.fillStyle = "yellow";  //<======= here
-          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.boardCellWidth/1.2, this.globalConfig.boardCellHeight/2.5);
+          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, destinationheight/1.2, destinationheight/2.5);
           c.fillStyle = "black";  //<======= here
           c.fillText ("Ct:"+this.cartisianScreenPosX.toFixed(2)+":"+this.cartisianScreenPosY.toFixed(2), this.cartisianScreenPosX, this.cartisianScreenPosY+12); 
           c.fillText ("Is:"+this.isoRowY+":"+this.isoColumnX, this.cartisianScreenPosX, this.cartisianScreenPosY+24); 
@@ -282,18 +289,52 @@ export class Sprite {
                       this.height,
                       this.cartisianScreenPosX,
                       this.cartisianScreenPosY,
-                      this.globalConfig.boardCellWidth,
-                      this.globalConfig.boardCellHeight);
+                      destinationWidth,
+                      destinationheight);
         }
-        if (this.isClicked || this.isPlayer){
+        if (this.isClicked){
           c.globalAlpha = 0.3;
           c.fillStyle = "yellow";
-          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, this.globalConfig.boardCellWidth, this.globalConfig.boardCellHeight);
+          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, destinationWidth, destinationheight);
+          this.drawDiamond(c,this.cartisianScreenPosX+(destinationWidth/2), this.cartisianScreenPosY,destinationWidth, destinationheight);
+          c.globalAlpha = 1.0;
+        }
+        if (this.isPlayer){
+          c.globalAlpha = 0.3;
+          c.fillStyle = "yellow";
+          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, destinationWidth, destinationheight);
+          this.drawDiamond(c,this.cartisianScreenPosX+(destinationWidth/2), this.cartisianScreenPosY,destinationWidth, destinationheight);
           c.globalAlpha = 1.0;
         }
   
       }
-    }  
+    }
+
+
+    drawDiamond(context, x, y, width, height){
+      context.save();
+      context.beginPath();
+      context.moveTo(x, y);
+      
+      // top left edge
+      let tleX = x - width / 2;
+      let tleY = y + height / 2;
+      context.lineTo(tleX, tleY);
+      
+      // bottom left edge
+      context.lineTo(x, y + height);
+      
+      // bottom right edge
+      context.lineTo(x + width / 2, y + height / 2);
+      
+      // closing the path automatically creates
+      // the top right edge
+      context.closePath();
+      
+      context.fillStyle = "red";
+      context.fill();
+      context.restore();
+    }
 
 }
 

@@ -64,15 +64,8 @@ export interface GlobalConfig{
   zoomPercent: number;
   canvasWidth: number;
   canvasHeight: number;
-  tileWidth: number;
-  tileHeight: number;
-  hasChanged: boolean;
-  offsetX: number;
-  offsetY: number;
   alternateDebugGridLine: number;
   debug: boolean;
-  initialOffsetX: number;
-  initialOffsetY: number;
   boardCellWidth: number;
   boardCellHeight: number;
   boardCellsWide: number;
@@ -81,16 +74,12 @@ export interface GlobalConfig{
   boardCenterPointY: number;
   boardCenterCellNumberX: number;
   boardCenterCellNumberY: number;
-  boardCenterCellNumberXOld: number;
-  boardCenterCellNumberYOld: number;
   boardCellWidthInitial: number;
   boardCellHeightInitial: number;
   boardHeight: number;
   boardWidth: number;
   boardOffsetX: number;
-  boardCellWidthDifference: number,
-  boardCellHeightDifference: number,
-  boardCellWidthOld: number,
-  boardCellHeightOld: number,
-  boardCellWidthToHeightRatio: number
+  boardOffsetY: number;
+  boardCellWidthToHeightRatio: number,
+  HoveredOverCell: Point2d
 }
