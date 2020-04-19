@@ -1,4 +1,5 @@
 import { SpriteTypes, GlobalConfig, Point2d } from '../interfaces/interfaces'
+import * as Utils from '../utils/utils'
 
 export class Sprite {
 
@@ -26,6 +27,8 @@ export class Sprite {
     toggleZindex: boolean = true;
     isClicked: boolean = false;
     isPlayer: boolean = false;
+
+    spriteIdInAllSprites: string = "0:0";
 
     renderMapLookupId: number;
     isoColumnX: number = 0;
@@ -74,6 +77,7 @@ export class Sprite {
       sprite.setIsoGridPosition(this.getIsoGridPosition().x, this.getIsoGridPosition().y);
       sprite.setMapLookupId(this.mapLookupId);
       sprite.isPlayer = this.isPlayer;
+      sprite.setSpriteIdInAllSprites(this.spriteIdInAllSprites);
       return sprite;
     }
 
@@ -93,6 +97,13 @@ export class Sprite {
       this.isClicked = !this.isClicked;
     }
     
+    setSpriteIdInAllSprites(id: string) {
+      this.spriteIdInAllSprites = id;
+    }
+    getSpriteIdInAllSprites() {
+      return this.spriteIdInAllSprites;
+    }
+
 
 
     setRenderMapLookupId(id: number) {
@@ -257,13 +268,42 @@ export class Sprite {
     }
     
     draw(c) {
+
       if (this.shown) {
         let destinationWidth = this.globalConfig.boardCellWidth;
         let destinationheight = this.globalConfig.boardCellHeight;
         if(this.isPlayer){
-          destinationWidth = 90 / (this.globalConfig.boardCellWidthInitial/this.globalConfig.boardCellWidth);
-          destinationheight = 45 / (this.globalConfig.boardCellHeightInitial/this.globalConfig.boardCellHeight);
+          destinationWidth = this.globalConfig.playerCellWidth;
+          destinationheight = this.globalConfig.playerCellHeight;
         }
+
+        if (!this.globalConfig.debug){
+          //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
+          c.drawImage(this.spritesheet,
+                      this.offsetX,
+                      this.offsetY,
+                      this.width,
+                      this.height,
+                      this.cartisianScreenPosX,
+                      this.cartisianScreenPosY,
+                      destinationWidth,
+                      destinationheight);
+        }
+        if (this.isClicked){          
+          c.globalAlpha = 0.3;
+          c.fillStyle = "yellow";
+          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, destinationWidth, destinationheight);
+          Utils.drawDiamond(c,this.cartisianScreenPosX+(destinationWidth/2), this.cartisianScreenPosY,destinationWidth, destinationheight);
+          c.globalAlpha = 1.0;
+        }
+        if (this.isPlayer){
+          c.globalAlpha = 0.3;
+          c.fillStyle = "yellow";
+          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, destinationWidth, destinationheight);
+          Utils.drawDiamond(c,this.cartisianScreenPosX+(destinationWidth/2), this.cartisianScreenPosY,destinationWidth, destinationheight);
+          c.globalAlpha = 1.0;
+        }
+
 
         if (this.globalConfig.debug){
           c.beginPath();
@@ -279,62 +319,16 @@ export class Sprite {
           c.fillText ("Ct:"+this.cartisianScreenPosX.toFixed(2)+":"+this.cartisianScreenPosY.toFixed(2), this.cartisianScreenPosX, this.cartisianScreenPosY+12); 
           c.fillText ("Is:"+this.isoRowY+":"+this.isoColumnX, this.cartisianScreenPosX, this.cartisianScreenPosY+24); 
           c.fillText ("Tp:"+this.getMapLookupId(), this.cartisianScreenPosX, this.cartisianScreenPosY+36);
+          c.fillText ("SID:"+this.getSpriteIdInAllSprites(), this.cartisianScreenPosX, this.cartisianScreenPosY+48);
         } 
-        else{
-          //https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/drawImage
-          c.drawImage(this.spritesheet,
-                      this.offsetX,
-                      this.offsetY,
-                      this.width,
-                      this.height,
-                      this.cartisianScreenPosX,
-                      this.cartisianScreenPosY,
-                      destinationWidth,
-                      destinationheight);
-        }
-        if (this.isClicked){
-          c.globalAlpha = 0.3;
-          c.fillStyle = "yellow";
-          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, destinationWidth, destinationheight);
-          this.drawDiamond(c,this.cartisianScreenPosX+(destinationWidth/2), this.cartisianScreenPosY,destinationWidth, destinationheight);
-          c.globalAlpha = 1.0;
-        }
-        if (this.isPlayer){
-          c.globalAlpha = 0.3;
-          c.fillStyle = "yellow";
-          c.fillRect(this.cartisianScreenPosX, this.cartisianScreenPosY, destinationWidth, destinationheight);
-          this.drawDiamond(c,this.cartisianScreenPosX+(destinationWidth/2), this.cartisianScreenPosY,destinationWidth, destinationheight);
-          c.globalAlpha = 1.0;
-        }
+
   
       }
+      
+
     }
 
 
-    drawDiamond(context, x, y, width, height){
-      context.save();
-      context.beginPath();
-      context.moveTo(x, y);
-      
-      // top left edge
-      let tleX = x - width / 2;
-      let tleY = y + height / 2;
-      context.lineTo(tleX, tleY);
-      
-      // bottom left edge
-      context.lineTo(x, y + height);
-      
-      // bottom right edge
-      context.lineTo(x + width / 2, y + height / 2);
-      
-      // closing the path automatically creates
-      // the top right edge
-      context.closePath();
-      
-      context.fillStyle = "red";
-      context.fill();
-      context.restore();
-    }
 
 }
 

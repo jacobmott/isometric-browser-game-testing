@@ -61,7 +61,15 @@ export class BoardComponent implements OnInit {
     boardOffsetX: 0,
     boardOffsetY: 0,
     boardCellWidthToHeightRatio: 0,
-    HoveredOverCell: {x: 0, y: 0}
+    HoveredOverCell: {x: 0, y: 0},
+    playerCellWidth: 0,
+    playerCellHeight: 0, 
+    playerCellWidthInitial: 0,
+    playerCellHeightInitial: 0,
+    boardOffsetFromScrollX: 0,
+    boardOffsetFromScrollY: 0,
+    percentDown: 0.1,
+    percentUp: 0.1
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -101,32 +109,57 @@ export class BoardComponent implements OnInit {
 
   mouseCurrentPos = { clientX: 0, clientY: 0 };
   
+
+  scrolling: object = { "left":  false, 
+                        "right": false, 
+                        "up":    false, 
+                        "down":  false
+                      };
+
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event) {
     this.calculateMouseCurrentPosition(event);
+    let offsetAmount = 10;
     if (this.mouseCurrentPos.clientX < 5) {
-      console.log("triggered1");
-      // do something, move the canvas/tiles(scroll)
+      this.scrolling["left"] = true;
     }
+    else {
+      this.scrolling["left"] = false;
+    }
+
+
     if (this.mouseCurrentPos.clientX > 1910) {
-      console.log("triggered2");
-      // do something, move the canvas/tiles(scroll)
-    } 
+      this.scrolling["right"] = true;
+    }
+    else {
+      this.scrolling["right"] = false;
+    }
+
+
     if (this.mouseCurrentPos.clientY > 900) {
-      console.log("triggered3");
-      // do something, move the canvas/tiles(scroll)
-    }  
+      this.scrolling["down"] = true;
+    } 
+    else {
+      this.scrolling["down"] = false;
+    }
+
     if (this.mouseCurrentPos.clientY < 5) {
-      console.log("triggered4");
-      // do something, move the canvas/tiles(scroll)
-    }      
+      this.scrolling["up"] = true;
+    }
+    else {
+      this.scrolling["up"] = false;
+    }
   } 
 
 
   @HostListener('document:mousedown', ['$event'])
   onMouseDown(event) {
     this.calculateMouseCurrentPosition(event);
-     this.clickedCell = this.whatCellWasClicked();
+
+    let screenX = this.mouseCurrentPos.clientX;
+    let screenY = this.mouseCurrentPos.clientY;
+
+     this.clickedCell = this.whatCellWasClickedAtThisScreenPosition(screenX, screenY);
 
      let spriteId = this.clickedCell.x.toString()+":"+this.clickedCell.y.toString();
      let sprite = this.allSprites.get(spriteId);
@@ -136,20 +169,22 @@ export class BoardComponent implements OnInit {
   @HostListener('wheel', ['$event']) 
   onMousewheel(event) {
     this.calculateMouseCurrentPosition(event);
+
     if(event.deltaY>0){
       this.globalConfig.zoomLevel -= 1;
-      if (this.globalConfig.zoomLevel < -8){ 
-        this.globalConfig.zoomLevel = -8;
-        return;
+      if (this.globalConfig.zoomPercent >= 0.1 && (this.globalConfig.zoomPercent <= 0.11) ){
+        this.globalConfig.percentDown = 0.01;
       }
-      this.globalConfig.zoomPercent -= 0.1;
+      this.globalConfig.zoomPercent -= this.globalConfig.percentDown;
     }
     if(event.deltaY<0){
       this.globalConfig.zoomLevel += 1;
-      this.globalConfig.zoomPercent += 0.1;
+      this.globalConfig.zoomPercent += this.globalConfig.percentUp;
     }
     this.globalConfig.boardCellWidth = Math.round((this.globalConfig.boardCellWidthInitial) * this.globalConfig.zoomPercent);
     this.globalConfig.boardCellHeight = Math.round((this.globalConfig.boardCellHeightInitial) * this.globalConfig.zoomPercent);   
+    this.globalConfig.playerCellWidth = Math.round((this.globalConfig.playerCellWidthInitial) * this.globalConfig.zoomPercent);
+    this.globalConfig.playerCellHeight = Math.round((this.globalConfig.playerCellHeightInitial) * this.globalConfig.zoomPercent);   
 
     this.adjustBoardSettings();
     this.adjustLevelData();      
@@ -206,8 +241,6 @@ export class BoardComponent implements OnInit {
     this.player.setSpeed(200);
     this.player.setDead(false);
 
-    this.currentPlayerSpriteId = 0;
-
     this.configureBoardSettings();
 
     ////Create our lookupmap so when we are looking through our level data we can lookup the sprite we need per tile
@@ -216,7 +249,6 @@ export class BoardComponent implements OnInit {
     this.placeLevelDataOnBoard();
     //Add the sprites that are in the levelmap data to the render queues at the right positions
     this.addPlayerToBoard();
-    this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
     this.gameLoop();
   }
 
@@ -226,10 +258,18 @@ export class BoardComponent implements OnInit {
   //
   //########################################################################################################
   addPlayerToBoard() {
-    this.placeCell(0, {x: 200, y: 200}, 0, 0);
-    this.placeCell(1, {x: 0, y: 0},0,0);
-    this.placeCell(2, {x: 0, y: 0},0,0);
-    this.placeCell(3, {x: 0, y: 0},0,0);
+    //We just put these tiles way off the board at 1000 x 1000 iso grid location, 
+    //becuase we dont care about them, but we need them loaded onto the grid so we can switch to them for animation
+    let playerIsoColumnX = 1000;
+    let playerIsoColumnY = 1000;    
+    this.placeCell(0, {x: 800, y: 400}, playerIsoColumnX, playerIsoColumnY);
+    this.placeCell(1, {x: 0, y: 0},     playerIsoColumnX, playerIsoColumnY);
+    this.placeCell(2, {x: 0, y: 0},     playerIsoColumnX, playerIsoColumnY);
+    this.placeCell(3, {x: 0, y: 0},     playerIsoColumnX, playerIsoColumnY);
+
+    //Setup our current player
+    this.currentPlayerSpriteId = 0;
+    this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
   }
 
 
@@ -289,15 +329,42 @@ export class BoardComponent implements OnInit {
       if(this.keyDown["0"]) {
         this.globalConfig.debug = !this.globalConfig.debug;
       }
+
+
+      let scrollAmount = 5;
+      let scrolling = false;
+      if(this.scrolling["left"]){
+        this.globalConfig.boardOffsetFromScrollX += scrollAmount;
+        scrolling = true;
+      }
+      if(this.scrolling["right"]){
+        this.globalConfig.boardOffsetFromScrollX -= scrollAmount;
+        scrolling = true;
+      }
+      if(this.scrolling["up"]){
+        this.globalConfig.boardOffsetFromScrollY += scrollAmount;
+        scrolling = true;
+      }
+      if(this.scrolling["down"]){
+        this.globalConfig.boardOffsetFromScrollY  -= scrollAmount;
+        scrolling = true;
+      }
+
+      if (scrolling){
+        this.adjustBoardSettings();
+        this.adjustLevelData();
+      }
      
       if(this.playerTileSpritesZIndex2.size > 0){
         //Update the current sprites position(So we can draw the sprite) from the players position
-        this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
-        this.currentPlayerSprite.setCartisianScreenPosition(this.player.point2d.x, this.player.point2d.y);
-        let playersIsoPoint = this.playersCurrentTileLocation();
-        let isoColumnX: number = playersIsoPoint.x;
-        let isoRowY: number = playersIsoPoint.y;      
-        this.currentPlayerSprite.setIsoGridPosition(isoColumnX,isoRowY);
+        if (this.playerWalking){
+          this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
+          this.currentPlayerSprite.setCartisianScreenPosition(this.player.point2d.x, this.player.point2d.y);
+          let playersIsoPoint = this.playersCurrentTileLocation();
+          let isoColumnX: number = playersIsoPoint.x;
+          let isoRowY: number = playersIsoPoint.y;      
+          this.currentPlayerSprite.setIsoGridPosition(isoColumnX,isoRowY);
+        }
         this.ctx.clearRect (0, 0, this.globalConfig.canvasWidth, this.globalConfig.canvasHeight);
         this.drawAndAnimateSprites();
         this.drawTimeAndFpsStats(this.timer.getSeconds());
@@ -322,22 +389,27 @@ export class BoardComponent implements OnInit {
   }
 
   //########################################################################################################
-  // whatCellWasClicked
+  // whatCellWasClickedAtThisScreenPosition
   // https://laserbrainstudios.com/2010/08/the-basics-of-isometric-programming/
   //
   //########################################################################################################
-  whatCellWasClicked(): Point2d {
+  whatCellWasClickedAtThisScreenPosition(x: number, y: number): Point2d {
 
-    let screenX = this.mouseCurrentPos.clientX;
-    let screenY = this.mouseCurrentPos.clientY;
+    let screenX = x;
+    let screenY = y;
+    let cellWidth = this.globalConfig.boardCellWidth;
+    let cellHeight = this.globalConfig.boardCellHeight; 
+    let offsetX = this.globalConfig.boardOffsetX;
+    let offsetY = this.globalConfig.boardOffsetY;
+
     //You’ll notice that I start with subtracting 438 from the mouse cursor’s x-coordinate. 
     //This is because I added 400 to the x-coordinate when drawing the tiles, 
     //so I have to subtract this again (as well as half a tile width) before calculating which tile the mouse is over.
-    
-    screenX = screenX - (this.globalConfig.boardOffsetX+(this.globalConfig.boardCellWidth/2));
-    screenY = screenY - this.globalConfig.boardOffsetY;   
-    let columnX = Math.trunc((screenY / (this.globalConfig.boardCellHeight)) + (screenX / this.globalConfig.boardCellWidth));
-    let rowY = Math.trunc((screenY / (this.globalConfig.boardCellHeight)) - (screenX / this.globalConfig.boardCellWidth));
+  
+    screenX = screenX - (offsetX+(cellWidth/2));
+    screenY = screenY - offsetY;   
+    let columnX = Math.trunc((screenY / (cellHeight)) + (screenX / cellWidth));
+    let rowY = Math.trunc((screenY / (cellHeight)) - (screenX / cellWidth));
  
     let point: Point2d = {
       x: columnX,
@@ -359,8 +431,8 @@ export class BoardComponent implements OnInit {
    let screenY = this.player.point2d.y;
   
     screenX = screenX - (this.globalConfig.boardCellWidth/2) ;
-    let tileX = Math.trunc((screenY / (this.globalConfig.boardCellHeight)) + (screenX / this.globalConfig.boardCellWidth));
-    let tileY = Math.trunc((screenY / (this.globalConfig.boardCellHeight)) - (screenX / this.globalConfig.boardCellWidth));
+    let tileX = (screenY / (this.globalConfig.boardCellHeight)) + (screenX / this.globalConfig.boardCellWidth);
+    let tileY = (screenY / (this.globalConfig.boardCellHeight)) - (screenX / this.globalConfig.boardCellWidth);
     let point: Point2d = {
       x: tileX,
       y: tileY
@@ -407,8 +479,11 @@ export class BoardComponent implements OnInit {
     this.globalConfig.boardWidth = this.globalConfig.boardCellsWide * this.globalConfig.boardCellWidth;
     this.globalConfig.boardHeight = this.globalConfig.boardCellsHeigh * this.globalConfig.boardCellHeight;  
   
-    this.globalConfig.boardOffsetX = (this.globalConfig.canvasWidth/2 - (this.globalConfig.boardCellWidth/2))+this.globalConfig.HoveredOverCell.x;
-    this.globalConfig.boardOffsetY = this.globalConfig.HoveredOverCell.y;
+    let bofsx = this.globalConfig.boardOffsetFromScrollX;
+    let bofsy = this.globalConfig.boardOffsetFromScrollY;    
+
+    this.globalConfig.boardOffsetX = (this.globalConfig.canvasWidth/2 - (this.globalConfig.boardCellWidth/2))+this.globalConfig.HoveredOverCell.x+(bofsx);
+    this.globalConfig.boardOffsetY = this.globalConfig.HoveredOverCell.y+(bofsy);
   }  
 
 
@@ -424,7 +499,14 @@ export class BoardComponent implements OnInit {
   
     this.globalConfig.canvasWidth = this.canvas.nativeElement.width;
     this.globalConfig.canvasHeight = this.canvas.nativeElement.height;
+  
     
+    this.globalConfig.playerCellWidth = 90;
+    this.globalConfig.playerCellHeight = 45;
+    this.globalConfig.playerCellWidthInitial = this.globalConfig.playerCellWidth;
+    this.globalConfig.playerCellHeightInitial= this.globalConfig.playerCellHeight;
+
+
     /*let's say we want to draw an isometric square in the center of the page. 
     Before we do that though, let's draw a normal square in the center of the page 
     so you know where some of these wild assumptions come from. To do that, we need to know 
@@ -557,11 +639,11 @@ export class BoardComponent implements OnInit {
     clonedSprite.setIsoGridPosition(isoColumnX,isoRowY);
     clonedSprite.setRenderMapLookupId(this.spriteMapLookupIdSequence);
     let spriteId = isoColumnX.toString()+":"+isoRowY.toString();
+    clonedSprite.setSpriteIdInAllSprites(spriteId);
 
     if (clonedSprite.getZindex() === 0){
       if (clonedSprite.getSpriteType() === SpriteTypes.GROUND){
         this.groundTileSpritesZIndex0.set(clonedSprite.getRenderMapLookupId(), clonedSprite);
-  
         this.allSprites.set(spriteId, clonedSprite);
       }
     }
@@ -639,6 +721,28 @@ export class BoardComponent implements OnInit {
       isoScreenCoord.y = isoScreenCoord.y + this.globalConfig.boardOffsetY;     
       sprite.setCartisianScreenPosition(isoScreenCoord.x, isoScreenCoord.y);
     });
+
+   
+    //let x = this.currentPlayerSprite.getCartisianScreenPosition().x;
+    //let y = this.currentPlayerSprite.getCartisianScreenPosition().y;    
+    //let x = 10;
+    //let y = 10;        
+    //let isoScreenCoord: Point2d = this.twoDToIso({x: x, y: y}) ;
+    //isoScreenCoord.x = isoScreenCoord.x + this.globalConfig.boardOffsetX;
+    //isoScreenCoord.y = isoScreenCoord.y + this.globalConfig.boardOffsetY;     
+    //this.currentPlayerSprite.setCartisianScreenPosition(isoScreenCoord.x, isoScreenCoord.y);
+
+    this.currentPlayerSprite = this.playerTileSpritesZIndex2.get(this.currentPlayerSpriteId);
+
+    let playersIsoPoint = this.whatCellWasClickedAtThisScreenPosition(this.player.point2d.x, this.player.point2d.y);
+
+    let x = playersIsoPoint.x;
+    let y = playersIsoPoint.y;        
+    let isoScreenCoord: Point2d = this.twoDToIso({x: x, y: y}) ;
+    this.currentPlayerSprite.setIsoGridPosition(x, y);
+    isoScreenCoord.x = isoScreenCoord.x + this.globalConfig.boardOffsetX;
+    isoScreenCoord.y = isoScreenCoord.y + this.globalConfig.boardOffsetY;     
+    this.currentPlayerSprite.setCartisianScreenPosition(isoScreenCoord.x, isoScreenCoord.y); 
 
 
   }
@@ -802,7 +906,7 @@ export class BoardComponent implements OnInit {
     }
     c.globalAlpha = 0.7;
     c.fillStyle = "white";
-    c.fillRect(0, 0, 460, 520);
+    c.fillRect(0, 0, 460, 680);
     c.globalAlpha = 1.0;
     c.fillStyle = "black";
   
@@ -834,11 +938,22 @@ export class BoardComponent implements OnInit {
     c.fillText ("BoardCellHeight: " + this.globalConfig.boardCellHeight, 10, 380);
     c.fillText ("boardCellWidthToHeightRatio: " + this.globalConfig.boardCellWidthToHeightRatio, 10, 400);
     c.fillText ("hoveredOverCell: " + this.globalConfig.HoveredOverCell.x+": "+ this.globalConfig.HoveredOverCell.y, 10, 420);
+    c.fillText ("BoardOffsetX: " + this.globalConfig.boardOffsetX, 10, 440);
+    c.fillText ("BoardOffsetY: " + this.globalConfig.boardOffsetY, 10, 460);
+    c.fillText ("boardOffsetFromScrollX: " + this.globalConfig.boardOffsetFromScrollX, 10, 480);
+    c.fillText ("boardOffsetFromScrollY: " + this.globalConfig.boardOffsetFromScrollY, 10, 500);    
+    
   
-  
-    c.fillText ("Player Info: ", 10, 460);
-    c.fillText ("XPos: " + this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 480);
-    c.fillText ("YPos: " + this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 500);  
+    c.fillText ("Player Info: ", 10, 540);
+    c.fillText ("XPos: " + this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 560);
+    c.fillText ("YPos: " + this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 580);
+    c.fillText ("isoGridX: " + this.currentPlayerSprite.getIsoGridPosition().y, 10, 600);    
+    c.fillText ("isoGridY: " + this.currentPlayerSprite.getIsoGridPosition().x, 10, 620);
+    
+    
+    c.fillText ("Other Info: ", 10, 640);
+    c.fillText ("What?: ", 10, 660);
+    
   
   }
 

@@ -2,34 +2,7 @@ export interface Point2d {
   x: number;
   y: number;
 }
-    
-    
-export interface Direction {
-  x: number;
-  y: number;
-}
 
-
-export interface DivStyle {
-  position: string,
-  color: string,     
-  width:  string,
-  height:  string,
-  left : string,
-  top: string
-}
-
-
-export interface ImgStyle {
-  width:  string,
-  height:  string,
-}
-
-
-export interface RenderData{
-  imgElement: HTMLImageElement,
-  tilePosition: Point2d
-}
 
 export interface Player {
   point2d: Point2d;
@@ -38,16 +11,6 @@ export interface Player {
   id: number;
   dead: boolean;
 }
-
-//export interface Player {
-//  rect: Rect;
-//  speed: number;
-//  name: string;
-//  id: number;
-//  dead: boolean;
-//  state: State;
-//  img: string
-//}
 
 
 export enum SpriteTypes {
@@ -81,5 +44,13 @@ export interface GlobalConfig{
   boardOffsetX: number;
   boardOffsetY: number;
   boardCellWidthToHeightRatio: number,
-  HoveredOverCell: Point2d
+  HoveredOverCell: Point2d;
+  playerCellWidth: number;
+  playerCellHeight: number;
+  playerCellWidthInitial: number;
+  playerCellHeightInitial: number;
+  boardOffsetFromScrollX: number;
+  boardOffsetFromScrollY: number;
+  percentDown: number;
+  percentUp: number;
 }
