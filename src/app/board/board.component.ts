@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import { Sprite} from '../classes/sprite';
 import { Entity} from '../classes/entity';
 import { Timer } from '../classes/timer';
-import { Point2d, SpriteTypes, GlobalConfig } from '../interfaces/interfaces';
+import { Point2d, SpriteTypes, GlobalConfig, HUDElement } from '../interfaces/interfaces';
 import * as Utils from '../utils/utils'
 import { HostListener } from '@angular/core';
 
@@ -40,7 +40,6 @@ export class BoardComponent implements OnInit {
 
   globalConfig: GlobalConfig = {
     zoomLevel: 1,
-    zoomFactor: 1,
     zoomPercent: 1,
     canvasWidth: 1920,
     canvasHeight: 1080,
@@ -79,6 +78,9 @@ export class BoardComponent implements OnInit {
   spriteMapLookupIdSequence: number = 0;
   allSprites: Map<string, Sprite> = new Map<string, Sprite>();
 
+
+  hudElements: Map<number, HUDElement> = new Map<number, HUDElement>();
+
   clickedCell: Point2d = {x: 0, y: 0};
 
   spriteTypesLookupMap: Map<number, Sprite> = new Map<number, Sprite>();
@@ -115,12 +117,18 @@ export class BoardComponent implements OnInit {
                         "up":    false, 
                         "down":  false
                       };
+  zoomed: boolean = false;
+  positionChanged: boolean = false;
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event) {
     this.calculateMouseCurrentPosition(event);
     let offsetAmount = 10;
-    if (this.mouseCurrentPos.clientX < 5) {
+
+    let screenX = this.mouseCurrentPos.clientX;
+    let screenY = this.mouseCurrentPos.clientY;
+
+    if (screenX < 5) {
       this.scrolling["left"] = true;
     }
     else {
@@ -128,7 +136,7 @@ export class BoardComponent implements OnInit {
     }
 
 
-    if (this.mouseCurrentPos.clientX > 1910) {
+    if (screenX > 1910) {
       this.scrolling["right"] = true;
     }
     else {
@@ -136,19 +144,24 @@ export class BoardComponent implements OnInit {
     }
 
 
-    if (this.mouseCurrentPos.clientY > 900) {
+    if (screenY > 900) {
       this.scrolling["down"] = true;
     } 
     else {
       this.scrolling["down"] = false;
     }
 
-    if (this.mouseCurrentPos.clientY < 5) {
+    if (screenY < 5) {
       this.scrolling["up"] = true;
     }
     else {
       this.scrolling["up"] = false;
     }
+
+
+
+    this.wasAnyButtonHoveredDoActionThen(screenX, screenY);
+
   } 
 
 
@@ -159,35 +172,72 @@ export class BoardComponent implements OnInit {
     let screenX = this.mouseCurrentPos.clientX;
     let screenY = this.mouseCurrentPos.clientY;
 
-     this.clickedCell = this.whatCellWasClickedAtThisScreenPosition(screenX, screenY);
+    this.wasSpriteClickedToggleClickedIfSo(screenX, screenY);
+    this.wasAnyButtonClickedDoActionThen(screenX, screenY);
+  }
 
-     let spriteId = this.clickedCell.x.toString()+":"+this.clickedCell.y.toString();
-     let sprite = this.allSprites.get(spriteId);
-     sprite.toggleIsClicked();
+  //########################################################################################################
+  // wasSpriteClickedToggleClickedIfSo
+  //
+  //########################################################################################################  
+  wasSpriteClickedToggleClickedIfSo(screenX: number, screenY: number): void {
+
+    this.clickedCell = this.whatCellWasClickedAtThisScreenPosition(screenX, screenY);
+  
+    let spriteId = this.clickedCell.x.toString()+":"+this.clickedCell.y.toString();
+    let sprite = this.allSprites.get(spriteId);
+    if (sprite){
+      sprite.toggleIsClicked();
     }
+  }
+
+
+  //########################################################################################################
+  // wasAnyButtonClickedDoActionThen
+  //
+  //########################################################################################################  
+  wasAnyButtonClickedDoActionThen(screenX: number, screenY: number): void {
+    this.hudElements.forEach((element: HUDElement, key: number) => {
+      let didCollide = Utils.collidePointRect(screenX, screenY, element.x, element.y, element.width,element.height);
+      if (didCollide){
+        element.isClicked = !element.isClicked;
+        element.execute();
+      }
+    });    
+  }
+  
+
+  //########################################################################################################
+  // wasAnyButtonHoveredDoActionThen
+  //
+  //########################################################################################################  
+  wasAnyButtonHoveredDoActionThen(screenX: number, screenY: number): void {
+    this.hudElements.forEach((element: HUDElement, key: number) => {
+      let didCollide = Utils.collidePointRect(screenX, screenY, element.x, element.y, element.width,element.height);
+      if (didCollide){
+        element.isHovered = !element.isHovered;
+      }
+    });    
+  }    
+
 
   @HostListener('wheel', ['$event']) 
   onMousewheel(event) {
     this.calculateMouseCurrentPosition(event);
-
+    this.zoomed = false;
     if(event.deltaY>0){
       this.globalConfig.zoomLevel -= 1;
       if (this.globalConfig.zoomPercent >= 0.1 && (this.globalConfig.zoomPercent <= 0.11) ){
         this.globalConfig.percentDown = 0.01;
       }
       this.globalConfig.zoomPercent -= this.globalConfig.percentDown;
+      this.zoomed = true;
     }
     if(event.deltaY<0){
       this.globalConfig.zoomLevel += 1;
       this.globalConfig.zoomPercent += this.globalConfig.percentUp;
-    }
-    this.globalConfig.boardCellWidth = Math.round((this.globalConfig.boardCellWidthInitial) * this.globalConfig.zoomPercent);
-    this.globalConfig.boardCellHeight = Math.round((this.globalConfig.boardCellHeightInitial) * this.globalConfig.zoomPercent);   
-    this.globalConfig.playerCellWidth = Math.round((this.globalConfig.playerCellWidthInitial) * this.globalConfig.zoomPercent);
-    this.globalConfig.playerCellHeight = Math.round((this.globalConfig.playerCellHeightInitial) * this.globalConfig.zoomPercent);   
-
-    this.adjustBoardSettings();
-    this.adjustLevelData();      
+      this.zoomed = true;
+    }   
   }
 
 
@@ -249,8 +299,115 @@ export class BoardComponent implements OnInit {
     this.placeLevelDataOnBoard();
     //Add the sprites that are in the levelmap data to the render queues at the right positions
     this.addPlayerToBoard();
+    this.createHud();
     this.gameLoop();
   }
+
+  //########################################################################################################
+  // createHud
+  //
+  //########################################################################################################
+  createHud() {
+
+    let thisRef = this;
+    let zoomReset = function zoom(): number {
+      thisRef.globalConfig.zoomPercent = 1;
+      thisRef.zoomed = true;
+      return 1;
+    };
+    let donothing = function zoom(): number {return 1;};
+
+
+    let drawMainHUD = function zoom(): number {
+      let c = thisRef.ctx;
+      c.globalAlpha = 0.7;
+      c.fillStyle = "white";
+      if (HUD.isClicked){
+        //Do nothing for now
+        //c.fillStyle = "red";
+      }
+      let x = HUD.x;
+      let y = HUD.y;
+      let width = HUD.width;
+      let height = HUD.height;
+      c.fillRect(x, y, width, height);
+      c.globalAlpha = 1.0;
+      c.fillStyle = "black";
+      return 1;
+    };       
+    let HUD = {x: 700, y: 800, width: 500, height: 200, isClicked: false, execute: donothing, draw: drawMainHUD, spritesheet: null, isHovered: false};
+
+    let drawZoomReset = function zoom(): number {
+      let c = thisRef.ctx;
+      let width = zoomResethudElement.width;
+      let height = zoomResethudElement.height;
+      let x = zoomResethudElement.x;
+      let y = zoomResethudElement.y;      
+      c.drawImage(zoomResethudElement.spritesheet,
+        0,
+        0,
+        width,
+        height,
+        x,
+        y,
+        width,
+        height);
+
+        if (zoomResethudElement.isHovered){
+          c.globalAlpha = 0.2;
+          c.fillStyle = "yellow";
+          c.fillRect(x, y, width, height);
+          c.globalAlpha = 1.0;
+          c.fillStyle = "black";
+        }        
+
+      return 1;
+    }; 
+    let zoomResethudElement = {x: 710, y: 810, width: 25, height: 25, isClicked: false, execute: zoomReset, draw: drawZoomReset, spritesheet: new Image(), isHovered: false};
+    zoomResethudElement.spritesheet.src = "assets/zoomReset.png";
+
+
+    let posReset = function zoom(): number {
+      thisRef.globalConfig.boardOffsetFromScrollX = 0;
+      thisRef.globalConfig.boardOffsetFromScrollY = 0;    
+      thisRef.positionChanged = true;  
+      return 1;
+    };
+
+    let posResetDraw = function posReset(): number {
+      let c = thisRef.ctx;
+      let width = positionResethudElement.width;
+      let height = positionResethudElement.height;
+      let x = positionResethudElement.x;
+      let y = positionResethudElement.y;      
+      c.drawImage(positionResethudElement.spritesheet,
+        0,
+        0,
+        width,
+        height,
+        x,
+        y,
+        width,
+        height);
+
+        if (positionResethudElement.isHovered){
+          c.globalAlpha = 0.2;
+          c.fillStyle = "yellow";
+          c.fillRect(x, y, width, height);
+          c.globalAlpha = 1.0;
+          c.fillStyle = "black";
+        }
+
+      return 1;
+    }; 
+    let positionResethudElement = {x: 745, y: 810, width: 25, height: 25, isClicked: false, execute: posReset, draw: posResetDraw, spritesheet: new Image(), isHovered: false};
+    positionResethudElement.spritesheet.src = "assets/posReset.png";
+
+    this.hudElements.set(0, HUD);
+    this.hudElements.set(1, zoomResethudElement);
+    this.hudElements.set(2, positionResethudElement);    
+  }
+
 
 
   //########################################################################################################
@@ -299,6 +456,12 @@ export class BoardComponent implements OnInit {
   gameLoop() {
 
     this.gameLoopF = setInterval(() => {
+
+
+      if (!document.hasFocus()) {
+        return;
+      }
+
 
       this.playerWalking = false;
       if(this.keyDown["d"]) {
@@ -350,10 +513,19 @@ export class BoardComponent implements OnInit {
         scrolling = true;
       }
 
-      if (scrolling){
+
+      if (this.zoomed){
+        this.globalConfig.boardCellWidth = Math.round((this.globalConfig.boardCellWidthInitial) * this.globalConfig.zoomPercent);
+        this.globalConfig.boardCellHeight = Math.round((this.globalConfig.boardCellHeightInitial) * this.globalConfig.zoomPercent);   
+        this.globalConfig.playerCellWidth = Math.round((this.globalConfig.playerCellWidthInitial) * this.globalConfig.zoomPercent);
+        this.globalConfig.playerCellHeight = Math.round((this.globalConfig.playerCellHeightInitial) * this.globalConfig.zoomPercent); 
+      }
+      if (scrolling || this.zoomed || this.positionChanged){
         this.adjustBoardSettings();
         this.adjustLevelData();
       }
+      this.zoomed = false;
+      this.positionChanged = false;
      
       if(this.playerTileSpritesZIndex2.size > 0){
         //Update the current sprites position(So we can draw the sprite) from the players position
@@ -367,6 +539,7 @@ export class BoardComponent implements OnInit {
         }
         this.ctx.clearRect (0, 0, this.globalConfig.canvasWidth, this.globalConfig.canvasHeight);
         this.drawAndAnimateSprites();
+        this.drawHUD();
         this.drawTimeAndFpsStats(this.timer.getSeconds());
         this.drawDebugInfo();
       }
@@ -806,21 +979,38 @@ export class BoardComponent implements OnInit {
   //########################################################################################################
   drawAndAnimateSprites() {
 
+    let c = this.ctx;
+    let t = this.timer;
+  
     this.groundTileSpritesZIndex0.forEach((sprite: Sprite, key: number) => {
-      sprite.draw(this.ctx);
+      sprite.draw(c);
     });
     this.buildingTileSpritesZIndex1.forEach((sprite: Sprite, key: number) => {
-      sprite.draw(this.ctx);
+      sprite.draw(c);
     });
     if (this.playerWalking){
-      this.currentPlayerSprite.animate(this.ctx, this.timer);
+      this.currentPlayerSprite.animate(c, t);
     }
     else{
-      this.currentPlayerSprite.draw(this.ctx);
+      this.currentPlayerSprite.draw(c);
     }
     this.entityTileSpritesZIndex2.forEach((sprite: Sprite, key: number) => {
-      sprite.draw(this.ctx);
+      sprite.draw(c);
     });
+
+  }
+
+
+  //########################################################################################################
+  // drawHUD
+  //
+  //########################################################################################################
+  drawHUD() {
+
+    this.hudElements.forEach((element, key: number) => {
+      element.draw();
+    });
+
   }
 
 
@@ -906,7 +1096,7 @@ export class BoardComponent implements OnInit {
     }
     c.globalAlpha = 0.7;
     c.fillStyle = "white";
-    c.fillRect(0, 0, 460, 680);
+    c.fillRect(0, 0, 460, 700);
     c.globalAlpha = 1.0;
     c.fillStyle = "black";
   
@@ -951,8 +1141,8 @@ export class BoardComponent implements OnInit {
     c.fillText ("isoGridY: " + this.currentPlayerSprite.getIsoGridPosition().x, 10, 620);
     
     
-    c.fillText ("Other Info: ", 10, 640);
-    c.fillText ("What?: ", 10, 660);
+    c.fillText ("Other Info: ", 10, 660);
+    c.fillText ("What?: ", 10, 680);
     
   
   }

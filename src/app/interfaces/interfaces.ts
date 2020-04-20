@@ -23,7 +23,6 @@ export enum SpriteTypes {
 
 export interface GlobalConfig{
   zoomLevel: number;
-  zoomFactor: number;
   zoomPercent: number;
   canvasWidth: number;
   canvasHeight: number;
@@ -53,4 +52,17 @@ export interface GlobalConfig{
   boardOffsetFromScrollY: number;
   percentDown: number;
   percentUp: number;
+}
+
+
+export interface HUDElement{
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isClicked: boolean;
+  execute: () => number;
+  draw: () => number;
+  spritesheet: HTMLImageElement;
+  isHovered: boolean;
 }
