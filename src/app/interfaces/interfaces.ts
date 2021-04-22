@@ -50,8 +50,8 @@ export interface GlobalConfig{
   playerCellHeightInitial: number;
   boardOffsetFromScrollX: number;
   boardOffsetFromScrollY: number;
-  percentDown: number;
-  percentUp: number;
+  percentDownOrUp: number;
+  currentZoomThreshold: number;
 }
 
 

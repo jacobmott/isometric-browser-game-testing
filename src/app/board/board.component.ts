@@ -39,8 +39,8 @@ export class BoardComponent implements OnInit {
   //########################################################################################################  
 
   globalConfig: GlobalConfig = {
-    zoomLevel: 1,
-    zoomPercent: 1,
+    zoomLevel: 1000,
+    zoomPercent: 1,  
     canvasWidth: 1920,
     canvasHeight: 1080,
     alternateDebugGridLine: 1,
@@ -67,8 +67,8 @@ export class BoardComponent implements OnInit {
     playerCellHeightInitial: 0,
     boardOffsetFromScrollX: 0,
     boardOffsetFromScrollY: 0,
-    percentDown: 0.1,
-    percentUp: 0.1
+    percentDownOrUp: 1,
+    currentZoomThreshold: 0
   }
 
   groundTileSpritesZIndex0: Map<number, Sprite> = new Map<number, Sprite>();
@@ -227,17 +227,16 @@ export class BoardComponent implements OnInit {
     this.zoomed = false;
     if(event.deltaY>0){
       this.globalConfig.zoomLevel -= 1;
-      if (this.globalConfig.zoomPercent >= 0.1 && (this.globalConfig.zoomPercent <= 0.11) ){
-        this.globalConfig.percentDown = 0.01;
-      }
-      this.globalConfig.zoomPercent -= this.globalConfig.percentDown;
+      this.globalConfig.zoomPercent = this.globalConfig.zoomPercent/1.1;
       this.zoomed = true;
     }
     if(event.deltaY<0){
       this.globalConfig.zoomLevel += 1;
-      this.globalConfig.zoomPercent += this.globalConfig.percentUp;
+      this.globalConfig.zoomPercent = this.globalConfig.zoomPercent*1.1;
       this.zoomed = true;
-    }   
+    }
+
+    this.globalConfig.zoomPercent = this.globalConfig.zoomPercent;
   }
 
 
@@ -312,6 +311,8 @@ export class BoardComponent implements OnInit {
     let thisRef = this;
     let zoomReset = function zoom(): number {
       thisRef.globalConfig.zoomPercent = 1;
+      thisRef.globalConfig.percentDownOrUp = 1;      
+      
       thisRef.zoomed = true;
       return 1;
     };
@@ -1112,37 +1113,38 @@ export class BoardComponent implements OnInit {
     c.fillText ("Zoom Info: ", 10, 80);
     c.fillText ("Level: " + this.globalConfig.zoomLevel, 10, 100);
     c.fillText ("zoomPercent: " + this.globalConfig.zoomPercent, 10, 120); 
+    c.fillText ("percentDownOrUp: " + this.globalConfig.percentDownOrUp, 10, 140);     
   
   
-    c.fillText ("Mouse Info: ", 10, 160);
-    c.fillText ("xPosition: " + this.mouseCurrentPos.clientX, 10, 180);  
-    c.fillText ("yPosition: " + this.mouseCurrentPos.clientY, 10, 200);  
-    c.fillText ("clickedCell: " + this.clickedCell.x+" : "+this.clickedCell.y, 10, 220);    
+    c.fillText ("Mouse Info: ", 10, 180);
+    c.fillText ("xPosition: " + this.mouseCurrentPos.clientX, 10, 200);  
+    c.fillText ("yPosition: " + this.mouseCurrentPos.clientY, 10, 220);  
+    c.fillText ("clickedCell: " + this.clickedCell.x+" : "+this.clickedCell.y, 10, 240);    
   
-    c.fillText ("Board Info: ", 10, 260);
-    c.fillText ("BoardWidth: " + this.globalConfig.boardWidth, 10, 280);
-    c.fillText ("BoardHeight: " + this.globalConfig.boardHeight, 10, 300);
-    c.fillText ("BoardCellsWide: " + this.globalConfig.boardCellsWide, 10, 320);
-    c.fillText ("BoardCellsHeigh: " + this.globalConfig.boardCellsHeigh, 10, 340);
-    c.fillText ("BoardCellWidth: " + this.globalConfig.boardCellWidth, 10, 360);
-    c.fillText ("BoardCellHeight: " + this.globalConfig.boardCellHeight, 10, 380);
-    c.fillText ("boardCellWidthToHeightRatio: " + this.globalConfig.boardCellWidthToHeightRatio, 10, 400);
-    c.fillText ("hoveredOverCell: " + this.globalConfig.HoveredOverCell.x+": "+ this.globalConfig.HoveredOverCell.y, 10, 420);
-    c.fillText ("BoardOffsetX: " + this.globalConfig.boardOffsetX, 10, 440);
-    c.fillText ("BoardOffsetY: " + this.globalConfig.boardOffsetY, 10, 460);
-    c.fillText ("boardOffsetFromScrollX: " + this.globalConfig.boardOffsetFromScrollX, 10, 480);
-    c.fillText ("boardOffsetFromScrollY: " + this.globalConfig.boardOffsetFromScrollY, 10, 500);    
+    c.fillText ("Board Info: ", 10, 280);
+    c.fillText ("BoardWidth: " + this.globalConfig.boardWidth, 10, 300);
+    c.fillText ("BoardHeight: " + this.globalConfig.boardHeight, 10, 320);
+    c.fillText ("BoardCellsWide: " + this.globalConfig.boardCellsWide, 10, 340);
+    c.fillText ("BoardCellsHeigh: " + this.globalConfig.boardCellsHeigh, 10, 360);
+    c.fillText ("BoardCellWidth: " + this.globalConfig.boardCellWidth, 10, 380);
+    c.fillText ("BoardCellHeight: " + this.globalConfig.boardCellHeight, 10, 400);
+    c.fillText ("boardCellWidthToHeightRatio: " + this.globalConfig.boardCellWidthToHeightRatio, 10, 420);
+    c.fillText ("hoveredOverCell: " + this.globalConfig.HoveredOverCell.x+": "+ this.globalConfig.HoveredOverCell.y, 10, 440);
+    c.fillText ("BoardOffsetX: " + this.globalConfig.boardOffsetX, 10, 460);
+    c.fillText ("BoardOffsetY: " + this.globalConfig.boardOffsetY, 10, 480);
+    c.fillText ("boardOffsetFromScrollX: " + this.globalConfig.boardOffsetFromScrollX, 10, 500);
+    c.fillText ("boardOffsetFromScrollY: " + this.globalConfig.boardOffsetFromScrollY, 10, 520);    
     
   
-    c.fillText ("Player Info: ", 10, 540);
-    c.fillText ("XPos: " + this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 560);
-    c.fillText ("YPos: " + this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 580);
-    c.fillText ("isoGridX: " + this.currentPlayerSprite.getIsoGridPosition().y, 10, 600);    
-    c.fillText ("isoGridY: " + this.currentPlayerSprite.getIsoGridPosition().x, 10, 620);
+    c.fillText ("Player Info: ", 10, 560);
+    c.fillText ("XPos: " + this.currentPlayerSprite.getCartisianScreenPosition().x, 10, 580);
+    c.fillText ("YPos: " + this.currentPlayerSprite.getCartisianScreenPosition().y, 10, 600);
+    c.fillText ("isoGridX: " + this.currentPlayerSprite.getIsoGridPosition().y, 10, 620);    
+    c.fillText ("isoGridY: " + this.currentPlayerSprite.getIsoGridPosition().x, 10, 640);
     
     
-    c.fillText ("Other Info: ", 10, 660);
-    c.fillText ("What?: ", 10, 680);
+    c.fillText ("Other Info: ", 10, 680);
+    c.fillText ("What?: ", 10, 700);
     
   
   }
